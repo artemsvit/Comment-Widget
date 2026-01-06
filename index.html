@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comment Widget - Contextual Commenting for the Web</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            primary: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              300: '#c4b5fd',
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              800: '#5b21b6',
+              900: '#4c1d95',
+              950: '#2e1065',
+            }
+          },
+          animation: {
+            'float': 'float 6s ease-in-out infinite',
+            'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-20px)' },
+            },
+            fadeInUp: {
+              '0%': { opacity: '0', transform: 'translateY(20px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Custom Utilities */
+    .glass {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-pattern {
+      background-image: radial-gradient(rgba(99, 102, 241, 0.1) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-900 bg-slate-50 selection:bg-primary-200 selection:text-primary-900">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full z-40 glass transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center gap-2">
+          <a href="index.html" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <div class="p-2 rounded-lg text-white shadow-lg" style="background: linear-gradient(135deg, #6366f1 0%, #9333ea 100%);">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square-plus w-5 h-5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" x2="15" y1="10" y2="10"/><line x1="12" x2="12" y1="7" y2="13"/></svg>
+            </div>
+            <span class="font-bold text-xl tracking-tight">CommentWidget</span>
+          </a>
+        </div>
+        <div class="hidden md:flex items-center gap-8">
+          <a href="#features" class="text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors">Features</a>
+          <a href="playground.html" class="text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors">Playground</a>
+          <a href="#pricing" class="text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors">Pricing</a>
+          <a href="docs.html" class="text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors">Docs</a>
+        </div>
+        <div class="flex items-center gap-4">
+          <a href="https://github.com/yourorg/comment-widget" target="_blank" class="hidden sm:flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors">
+            <i data-lucide="github" class="w-5 h-5"></i>
+          </a>
+          <a href="#installation" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-full text-sm font-semibold transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
+            Get Started
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden hero-pattern">
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none">
+      <div class="absolute top-20 right-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float"></div>
+      <div class="absolute top-40 left-10 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" style="animation-delay: 2s"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 shadow-sm mb-8 animate-fade-in-up">
+        <span class="flex h-2 w-2 rounded-full bg-green-500"></span>
+        <span class="text-sm font-medium text-slate-600">v1.0.0 Now Available</span>
+      </div>
+      
+      <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight mb-6 animate-fade-in-up" style="animation-delay: 0.1s">
+        Contextual commenting <br>
+        <span class="gradient-text">for any website</span>
+      </h1>
+      
+      <p class="text-xl text-slate-600 mb-10 max-w-2xl mx-auto animate-fade-in-up" style="animation-delay: 0.2s">
+        Add powerful collaboration features to your product in minutes. Open source, lightweight, and framework agnostic.
+      </p>
+      
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style="animation-delay: 0.3s">
+        <a href="#installation" class="w-full sm:w-auto px-8 py-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-lg shadow-xl shadow-primary-500/20 transition-all hover:-translate-y-1 flex items-center justify-center gap-2">
+          Start for Free
+          <i data-lucide="arrow-right" class="w-5 h-5"></i>
+        </a>
+        <a href="playground.html" class="w-full sm:w-auto px-8 py-4 bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 rounded-xl font-bold text-lg shadow-sm transition-all hover:-translate-y-1 flex items-center justify-center gap-2">
+          <i data-lucide="play" class="w-5 h-5"></i>
+          Try Playground
+        </a>
+      </div>
+
+      <!-- Hero Visual/Demo Placeholder -->
+      <div class="mt-20 relative max-w-5xl mx-auto animate-fade-in-up" style="animation-delay: 0.5s">
+        <div class="absolute -inset-1 rounded-2xl blur opacity-20" style="background: linear-gradient(to right, #6366f1, #9333ea);"></div>
+        <div class="relative bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
+          <div class="flex items-center gap-2 px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+            <div class="flex gap-1.5">
+              <div class="w-3 h-3 rounded-full bg-red-400"></div>
+              <div class="w-3 h-3 rounded-full bg-amber-400"></div>
+              <div class="w-3 h-3 rounded-full bg-green-400"></div>
+            </div>
+            <div class="flex-1 text-center text-xs font-mono text-slate-400">app.acme.com</div>
+          </div>
+          <div class="p-8 md:p-12 text-left bg-slate-50" id="hero-demo-area">
+            <div class="max-w-2xl mx-auto space-y-8">
+              <div class="h-8 w-3/4 bg-slate-200 rounded-lg animate-pulse"></div>
+              <div class="space-y-3">
+                <div class="h-4 w-full bg-slate-200 rounded animate-pulse"></div>
+                <div class="h-4 w-5/6 bg-slate-200 rounded animate-pulse"></div>
+                <div class="h-4 w-4/6 bg-slate-200 rounded animate-pulse"></div>
+              </div>
+              <div class="flex gap-4 pt-4">
+                <div class="h-10 w-32 bg-indigo-100 rounded-lg animate-pulse"></div>
+                <div class="h-10 w-32 bg-slate-200 rounded-lg animate-pulse"></div>
+              </div>
+              
+              <!-- Hint Overlay -->
+              <div class="absolute inset-0 flex items-center justify-center bg-slate-900/5 backdrop-blur-[2px] transition-opacity hover:opacity-0 cursor-crosshair">
+                <div class="bg-white px-6 py-3 rounded-full shadow-xl border border-slate-100 flex items-center gap-3 animate-bounce">
+                  <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-primary-500"></span>
+                  </span>
+                  <span class="font-medium text-slate-600">Click anywhere to comment!</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Grid -->
+  <section id="features" class="py-24 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <h2 class="text-base font-semibold text-primary-600 tracking-wide uppercase">Features</h2>
+        <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+          Everything you need for collaboration
+        </p>
+        <p class="mt-4 max-w-2xl text-xl text-slate-500 mx-auto">
+          Built for developers, designed for everyone. Our widget integrates seamlessly into any tech stack.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Feature 1 -->
+        <div class="p-8 bg-slate-50 rounded-2xl border border-slate-100 hover:border-primary-100 hover:shadow-lg hover:shadow-primary-500/5 transition-all group">
+          <div class="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <i data-lucide="mouse-pointer-2" class="w-6 h-6 text-primary-600"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-900 mb-3">Contextual Comments</h3>
+          <p class="text-slate-600 leading-relaxed">
+            Click anywhere on the DOM to pin a comment. We intelligently attach it to the underlying element, so it stays put even if the layout shifts.
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="p-8 bg-slate-50 rounded-2xl border border-slate-100 hover:border-primary-100 hover:shadow-lg hover:shadow-primary-500/5 transition-all group">
+          <div class="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <i data-lucide="message-circle" class="w-6 h-6 text-primary-600"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-900 mb-3">Threaded Replies</h3>
+          <p class="text-slate-600 leading-relaxed">
+            Keep conversations organized with nested threads. Resolve discussions when they're done to keep the workspace clean.
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="p-8 bg-slate-50 rounded-2xl border border-slate-100 hover:border-primary-100 hover:shadow-lg hover:shadow-primary-500/5 transition-all group">
+          <div class="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <i data-lucide="layers" class="w-6 h-6 text-primary-600"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-900 mb-3">Framework Agnostic</h3>
+          <p class="text-slate-600 leading-relaxed">
+            Works with React, Vue, Svelte, or vanilla JS. Web Component support ensures styles don't bleed into your app.
+          </p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="p-8 bg-slate-50 rounded-2xl border border-slate-100 hover:border-primary-100 hover:shadow-lg hover:shadow-primary-500/5 transition-all group">
+          <div class="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <i data-lucide="database" class="w-6 h-6 text-primary-600"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-900 mb-3">Flexible Storage</h3>
+          <p class="text-slate-600 leading-relaxed">
+            Comes with adapters for LocalStorage, Firebase, and Supabase. Or write your own `StorageAdapter` in 50 lines of code.
+          </p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="p-8 bg-slate-50 rounded-2xl border border-slate-100 hover:border-primary-100 hover:shadow-lg hover:shadow-primary-500/5 transition-all group">
+          <div class="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <i data-lucide="command" class="w-6 h-6 text-primary-600"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-900 mb-3">Keyboard First</h3>
+          <p class="text-slate-600 leading-relaxed">
+            Power users feel right at home. Press <kbd class="px-2 py-0.5 rounded bg-slate-200 text-slate-700 text-sm font-mono">C</kbd> to toggle comments, <kbd class="px-2 py-0.5 rounded bg-slate-200 text-slate-700 text-sm font-mono">Esc</kbd> to close.
+          </p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="p-8 bg-slate-50 rounded-2xl border border-slate-100 hover:border-primary-100 hover:shadow-lg hover:shadow-primary-500/5 transition-all group">
+          <div class="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <i data-lucide="palette" class="w-6 h-6 text-primary-600"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-900 mb-3">Fully Customizable</h3>
+          <p class="text-slate-600 leading-relaxed">
+            Change colors, fonts, and positioning via simple config options. Your brand, your style.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Code / Installation Section -->
+  <section id="installation" class="py-24 bg-slate-900 text-white relative overflow-hidden">
+    <!-- Background Accents -->
+    <div class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-primary-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+    <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
+        <div class="mb-12 lg:mb-0">
+          <h2 class="text-3xl font-extrabold tracking-tight sm:text-4xl mb-6">
+            Ready to integrate?
+            <br>
+            <span class="text-primary-400">It takes less than 2 minutes.</span>
+          </h2>
+          <p class="text-lg text-slate-300 mb-8">
+            Install via NPM or drop in a script tag. Configure your storage provider and you're good to go.
+          </p>
+          
+          <div class="space-y-4">
+            <div class="flex items-center gap-4">
+              <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400">
+                <i data-lucide="check" class="w-4 h-4"></i>
+              </div>
+              <span class="text-slate-300">TypeScript ready</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400">
+                <i data-lucide="check" class="w-4 h-4"></i>
+              </div>
+              <span class="text-slate-300">Zero dependencies</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400">
+                <i data-lucide="check" class="w-4 h-4"></i>
+              </div>
+              <span class="text-slate-300">~50KB gzipped</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden">
+          <div class="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-700">
+            <div class="flex gap-2">
+              <div class="w-3 h-3 rounded-full bg-red-500"></div>
+              <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+              <div class="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+            <div class="text-xs text-slate-400 font-mono">App.tsx</div>
+          </div>
+          <div class="p-6 overflow-x-auto">
+            <pre class="font-mono text-sm leading-relaxed text-slate-300"><code><span class="text-purple-400">import</span> { useEffect } <span class="text-purple-400">from</span> <span class="text-green-400">'react'</span>;
+<span class="text-purple-400">import</span> { initCommentWidget } <span class="text-purple-400">from</span> <span class="text-green-400">'@commentwidget/core'</span>;
+
+<span class="text-purple-400">function</span> <span class="text-blue-400">App</span>() {
+  <span class="text-blue-400">useEffect</span>(() => {
+    <span class="text-slate-500">// Initialize the widget</span>
+    <span class="text-purple-400">const</span> widget = <span class="text-blue-400">initCommentWidget</span>({
+      <span class="text-orange-300">primaryColor</span>: <span class="text-green-400">'#6366f1'</span>,
+      <span class="text-orange-300">storage</span>: <span class="text-purple-400">new</span> <span class="text-yellow-300">LocalStorageAdapter</span>(<span class="text-green-400">'comments'</span>)
+    });
+
+    <span class="text-purple-400">return</span> () => widget.<span class="text-blue-400">destroy</span>();
+  }, []);
+
+  <span class="text-purple-400">return</span> <span class="text-blue-300">&lt;YourApp /&gt;</span>;
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" class="py-24 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl font-extrabold text-slate-900 sm:text-4xl">Simple, transparent pricing</h2>
+        <p class="mt-4 text-xl text-slate-600">Start for free, scale as you grow.</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <!-- Free Tier -->
+        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+          <h3 class="text-xl font-bold text-slate-900">Open Source</h3>
+          <div class="mt-4 mb-6">
+            <span class="text-4xl font-extrabold text-slate-900">$0</span>
+            <span class="text-slate-500">/forever</span>
+          </div>
+          <p class="text-slate-600 mb-6 text-sm">Perfect for personal projects and small teams testing the waters.</p>
+          <a href="https://github.com/yourorg/comment-widget" class="block w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-900 text-center font-bold rounded-xl transition-colors">
+            View on GitHub
+          </a>
+          <ul class="mt-8 space-y-4">
+            <li class="flex items-center gap-3 text-sm text-slate-600">
+              <i data-lucide="check" class="w-4 h-4 text-green-500"></i>
+              Unlimited local comments
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-600">
+              <i data-lucide="check" class="w-4 h-4 text-green-500"></i>
+              All basic adapters
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-600">
+              <i data-lucide="check" class="w-4 h-4 text-green-500"></i>
+              Community support
+            </li>
+          </ul>
+        </div>
+
+        <!-- Pro Tier -->
+        <div class="bg-white p-8 rounded-2xl shadow-xl border-2 border-primary-500 relative transform md:-translate-y-4">
+          <div class="absolute top-0 right-0 bg-primary-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
+            POPULAR
+          </div>
+          <h3 class="text-xl font-bold text-slate-900">Pro</h3>
+          <div class="mt-4 mb-6">
+            <span class="text-4xl font-extrabold text-slate-900">$29</span>
+            <span class="text-slate-500">/month</span>
+          </div>
+          <p class="text-slate-600 mb-6 text-sm">For growing teams that need cloud storage and management.</p>
+          <a href="#" class="block w-full py-3 px-4 bg-primary-600 hover:bg-primary-700 text-white text-center font-bold rounded-xl transition-colors shadow-lg shadow-primary-500/30">
+            Start Free Trial
+          </a>
+          <ul class="mt-8 space-y-4">
+            <li class="flex items-center gap-3 text-sm text-slate-600">
+              <i data-lucide="check" class="w-4 h-4 text-green-500"></i>
+              Cloud Database Included
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-600">
+              <i data-lucide="check" class="w-4 h-4 text-green-500"></i>
+              Admin Dashboard
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-600">
+              <i data-lucide="check" class="w-4 h-4 text-green-500"></i>
+              Email Notifications
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-600">
+              <i data-lucide="check" class="w-4 h-4 text-green-500"></i>
+              Priority Support
+            </li>
+          </ul>
+        </div>
+
+        <!-- Enterprise Tier -->
+        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+          <h3 class="text-xl font-bold text-slate-900">Enterprise</h3>
+          <div class="mt-4 mb-6">
+            <span class="text-4xl font-extrabold text-slate-900">Custom</span>
+          </div>
+          <p class="text-slate-600 mb-6 text-sm">For large organizations with specific security and compliance needs.</p>
+          <a href="#" class="block w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-900 text-center font-bold rounded-xl transition-colors">
+            Contact Sales
+          </a>
+          <ul class="mt-8 space-y-4">
+            <li class="flex items-center gap-3 text-sm text-slate-600">
+              <i data-lucide="check" class="w-4 h-4 text-green-500"></i>
+              SSO & SAML
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-600">
+              <i data-lucide="check" class="w-4 h-4 text-green-500"></i>
+              Self-hosted option
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-600">
+              <i data-lucide="check" class="w-4 h-4 text-green-500"></i>
+              SLA Guarantee
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 text-slate-300 py-12 border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid md:grid-cols-4 gap-8 mb-8">
+        <div class="col-span-1 md:col-span-2">
+          <div class="flex items-center gap-2 text-white mb-4">
+            <i data-lucide="message-square-plus" class="w-6 h-6"></i>
+            <span class="font-bold text-xl">CommentWidget</span>
+          </div>
+          <p class="text-slate-400 max-w-sm">
+            The open-source comment widget for the modern web. Add collaboration to any product in minutes.
+          </p>
+        </div>
+        <div>
+          <h4 class="font-bold text-white mb-4">Product</h4>
+          <ul class="space-y-2">
+            <li><a href="#features" class="hover:text-white transition-colors">Features</a></li>
+            <li><a href="#pricing" class="hover:text-white transition-colors">Pricing</a></li>
+            <li><a href="playground.html" class="hover:text-white transition-colors">Playground</a></li>
+            <li><a href="docs.html" class="hover:text-white transition-colors">Documentation</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-bold text-white mb-4">Community</h4>
+          <ul class="space-y-2">
+            <li><a href="https://github.com/yourorg/comment-widget" class="hover:text-white transition-colors">GitHub</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Discord</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Twitter</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="pt-8 border-t border-slate-800 text-sm text-slate-500 flex flex-col md:flex-row justify-between items-center gap-4">
+        <p>&copy; 2026 Comment Widget. Released under MIT License.</p>
+        <div class="flex gap-6">
+          <a href="#" class="hover:text-white transition-colors">Privacy</a>
+          <a href="#" class="hover:text-white transition-colors">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Initialize Lucide Icons -->
+  <script>
+    lucide.createIcons();
+  </script>
+
+  <!-- Initialize Comment Widget -->
+  <script type="module">
+    import { initCommentWidget, LocalStorageAdapter } from './src/index.ts';
+    
+    // Initialize the widget globally
+    const widget = initCommentWidget({
+      storage: new LocalStorageAdapter('landing-page-comments'),
+      primaryColor: '#7c3aed', // Matches the primary-600 color
+      enableKeyboardShortcuts: true
+    });
+
+    // Handle "Click to Comment" overlay interaction
+    const demoOverlay = document.querySelector('.cursor-crosshair');
+    if (demoOverlay) {
+      demoOverlay.addEventListener('click', (e) => {
+        // Prevent default to avoid double-firing if it bubbles to the widget immediately
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Hide the overlay
+        demoOverlay.style.opacity = '0';
+        demoOverlay.style.pointerEvents = 'none'; // Let future clicks pass through to content/widget
+        
+        // Activate comment mode
+        widget.startComment({ x: e.clientX, y: e.clientY });
+      });
+
+      // Restore overlay when comment mode ends
+      window.addEventListener('comment-widget-state-change', (e) => {
+        if (!e.detail.isVisible) {
+          demoOverlay.style.opacity = '1';
+          demoOverlay.style.pointerEvents = 'auto';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

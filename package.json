@@ -1,0 +1,61 @@
+{
+  "name": "@commentwidget/core",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A powerful contextual commenting system for any website",
+  "main": "dist/comment-widget.esm.js",
+  "module": "dist/comment-widget.esm.js",
+  "types": "dist/index.d.ts",
+  "unpkg": "dist/comment-widget.umd.js",
+  "jsdelivr": "dist/comment-widget.umd.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "comments",
+    "commenting",
+    "widget",
+    "figma-style",
+    "collaboration",
+    "feedback"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@emotion/is-prop-valid": "^1.4.0",
+    "@floating-ui/react": "^0.27.16",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.23.12",
+    "lucide-react": "^0.511.0",
+    "mousetrap": "^1.6.5",
+    "react-textarea-autosize": "^8.5.9",
+    "uuid": "^13.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/mousetrap": "^1.6.15",
+    "@types/node": "^22.15.30",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^4.1.18",
+    "terser": "^5.44.0",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5",
+    "vite-plugin-dts": "^4.3.0"
+  }
+}
