@@ -43,6 +43,18 @@ export interface CommentWidgetConfig {
    * @default true
    */
   usePortal?: boolean;
+
+  /**
+   * Hide the floating button
+   * @default false
+   */
+  hideButton?: boolean;
+
+  /**
+   * Hide the sidebar (comments can still be viewed via comment threads)
+   * @default false
+   */
+  hideSidebar?: boolean;
 }
 
 export const defaultConfig: Partial<CommentWidgetConfig> = {
@@ -52,6 +64,8 @@ export const defaultConfig: Partial<CommentWidgetConfig> = {
   keyboardShortcut: 'c',
   container: null,
   usePortal: true,
+  hideButton: false,
+  hideSidebar: false,
 };
 
 export function mergeConfig(userConfig: CommentWidgetConfig): Required<CommentWidgetConfig> {

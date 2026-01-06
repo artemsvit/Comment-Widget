@@ -112,7 +112,7 @@
   </nav>
 
   <!-- Hero Section -->
-  <section class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden hero-pattern">
+  <section id="hero-comment-section" class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden hero-pattern">
     <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none">
       <div class="absolute top-20 right-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float"></div>
       <div class="absolute top-40 left-10 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" style="animation-delay: 2s"></div>
@@ -144,45 +144,6 @@
         </a>
       </div>
 
-      <!-- Hero Visual/Demo Placeholder -->
-      <div class="mt-20 relative max-w-5xl mx-auto animate-fade-in-up" style="animation-delay: 0.5s">
-        <div class="absolute -inset-1 rounded-2xl blur opacity-20" style="background: linear-gradient(to right, #6366f1, #9333ea);"></div>
-        <div class="relative bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
-          <div class="flex items-center gap-2 px-4 py-3 border-b border-slate-100 bg-slate-50/50">
-            <div class="flex gap-1.5">
-              <div class="w-3 h-3 rounded-full bg-red-400"></div>
-              <div class="w-3 h-3 rounded-full bg-amber-400"></div>
-              <div class="w-3 h-3 rounded-full bg-green-400"></div>
-            </div>
-            <div class="flex-1 text-center text-xs font-mono text-slate-400">app.acme.com</div>
-          </div>
-          <div class="p-8 md:p-12 text-left bg-slate-50" id="hero-demo-area">
-            <div class="max-w-2xl mx-auto space-y-8">
-              <div class="h-8 w-3/4 bg-slate-200 rounded-lg animate-pulse"></div>
-              <div class="space-y-3">
-                <div class="h-4 w-full bg-slate-200 rounded animate-pulse"></div>
-                <div class="h-4 w-5/6 bg-slate-200 rounded animate-pulse"></div>
-                <div class="h-4 w-4/6 bg-slate-200 rounded animate-pulse"></div>
-              </div>
-              <div class="flex gap-4 pt-4">
-                <div class="h-10 w-32 bg-indigo-100 rounded-lg animate-pulse"></div>
-                <div class="h-10 w-32 bg-slate-200 rounded-lg animate-pulse"></div>
-              </div>
-              
-              <!-- Hint Overlay -->
-              <div class="absolute inset-0 flex items-center justify-center bg-slate-900/5 backdrop-blur-[2px] transition-opacity hover:opacity-0 cursor-crosshair">
-                <div class="bg-white px-6 py-3 rounded-full shadow-xl border border-slate-100 flex items-center gap-3 animate-bounce">
-                  <span class="relative flex h-3 w-3">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-primary-500"></span>
-                  </span>
-                  <span class="font-medium text-slate-600">Click here to comment!</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </section>
 
@@ -486,48 +447,5 @@
     lucide.createIcons();
   </script>
 
-  <!-- Initialize Comment Widget -->
-  <script type="module">
-    import { initCommentWidget, LocalStorageAdapter } from './src/index.ts';
-    
-    // Initialize the widget globally
-    const container = document.getElementById('hero-demo-area');
-    const widget = initCommentWidget({
-      storage: new LocalStorageAdapter('landing-page-comments'),
-      primaryColor: '#7c3aed', // Matches the primary-600 color
-      enableKeyboardShortcuts: true,
-      container: container
-    });
-
-    // Handle "Click to Comment" overlay interaction
-    const demoOverlay = document.querySelector('.cursor-crosshair');
-    if (demoOverlay) {
-      demoOverlay.addEventListener('click', (e) => {
-        // Prevent default to avoid double-firing if it bubbles to the widget immediately
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Hide the overlay
-        demoOverlay.style.opacity = '0';
-        demoOverlay.style.pointerEvents = 'none'; // Let future clicks pass through to content/widget
-        
-        // Calculate relative position
-        const rect = container.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        // Activate comment mode
-        widget.startComment({ x, y });
-      });
-
-      // Restore overlay when comment mode ends
-      window.addEventListener('comment-widget-state-change', (e) => {
-        if (!e.detail.isVisible) {
-          demoOverlay.style.opacity = '1';
-          demoOverlay.style.pointerEvents = 'auto';
-        }
-      });
-    }
-  </script>
 </body>
 </html>

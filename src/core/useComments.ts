@@ -3,6 +3,58 @@ import { v4 as uuidv4 } from 'uuid';
 import { Comment, Reply, CommentSystemState, CommentPosition } from './types';
 import { StorageAdapter } from '../storage/StorageAdapter';
 
+// Generate a robust CSS selector for an element
+function generateSelector(element: Element): string {
+  // Prefer ID selector (most reliable)
+  if (element.id) {
+    return `#${element.id}`;
+  }
+  
+  // Build a path selector
+  const path: string[] = [];
+  let current: Element | null = element;
+  
+  while (current && current !== document.body && current !== document.documentElement) {
+    let selector = current.tagName.toLowerCase();
+    
+    // Add ID if available
+    if (current.id) {
+      selector += `#${current.id}`;
+      path.unshift(selector);
+      break; // ID is unique, stop here
+    }
+    
+    // Add classes if available
+    if (current.className && typeof current.className === 'string') {
+      const classes = current.className.split(' ').filter(c => c.trim() && !c.startsWith('data-'));
+      if (classes.length > 0) {
+        // Use all classes for better specificity
+        selector += `.${classes.join('.')}`;
+      }
+    }
+    
+    // Add nth-child if needed for uniqueness
+    const parent: Element | null = current.parentElement;
+    if (parent) {
+      const siblings = Array.from(parent.children).filter(
+        (child: Element) => child.tagName === current!.tagName
+      );
+      if (siblings.length > 1) {
+        const index = siblings.indexOf(current as Element) + 1;
+        selector += `:nth-of-type(${index})`;
+      }
+    }
+    
+    path.unshift(selector);
+    current = parent;
+    
+    // Limit path depth to avoid overly long selectors
+    if (path.length >= 5) break;
+  }
+  
+  return path.join(' > ');
+}
+
 export const useComments = (storageAdapter: StorageAdapter, primaryColor: string) => {
   const [state, setState] = useState<CommentSystemState>({
     comments: [],
@@ -43,7 +95,7 @@ export const useComments = (storageAdapter: StorageAdapter, primaryColor: string
     [storageAdapter]
   );
 
-  const toggleVisibility = useCallback(() => {
+  const toggleVisibility = useCallback((skipSidebar: boolean = false) => {
     setState((prev) => {
       // Logic: If either the overlay is visible OR the sidebar is open, treat "Toggle" as "Close All".
       // Otherwise, "Open All".
@@ -63,14 +115,16 @@ export const useComments = (storageAdapter: StorageAdapter, primaryColor: string
           showPreviewDot: false,
         };
       } else {
-        // Open everything
+        // Open comment mode (overlay), but skip sidebar if requested
         setActivationSource('manual');
-        setIsSidebarOpen(true);
+        if (!skipSidebar) {
+          setIsSidebarOpen(true);
+        }
 
         return {
           ...prev,
           isVisible: true,
-          activeCommentId: null, // Don't reset active comment id if we want to remember? No, start fresh.
+          activeCommentId: null,
           isCreatingComment: false,
           newCommentPosition: null,
           showPreviewDot: false,
@@ -131,33 +185,72 @@ export const useComments = (storageAdapter: StorageAdapter, primaryColor: string
       // Identify the element under the comment position
       // Convert document coordinates to viewport coordinates for element detection
       let selector: string | undefined;
+      
+      // Use viewport coordinates directly (elementsFromPoint needs viewport coords)
       const viewportX = docX - window.scrollX;
       const viewportY = docY - window.scrollY;
       
       // Get the element at the position (using viewport coordinates)
       const elements = document.elementsFromPoint(viewportX, viewportY);
       
-      // Filter out our own widget elements
-      const targetElement = elements.find(el => 
-        !el.closest('#comment-widget-root') && 
-        !el.closest('[data-comment-widget]')
-      );
-      
-      if (targetElement) {
-        // Generate a unique selector
-        if (targetElement.id) {
-          selector = `#${targetElement.id}`;
-        } else if (targetElement.className && typeof targetElement.className === 'string' && targetElement.className.trim() !== '') {
-           // Use the first class as a rough selector if no ID
-           // Ideally we'd use a more robust path generator
-           const classes = targetElement.className.split(' ').filter(c => c.trim());
-           if (classes.length > 0) {
-             selector = `.${classes[0]}`;
-           }
+      // Find low-level element using improved logic
+      const targetElement = (() => {
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const maxContainerSize = Math.max(viewportWidth, viewportHeight) * 0.9;
+        const preferredTags = ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT', 'IMG', 'SVG', 'SPAN', 'STRONG', 'EM', 'B', 'I', 'CODE', 'PRE', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'TD', 'TH'];
+        const containerTags = ['BODY', 'HTML'];
+        
+        // First pass: preferred elements
+        for (const el of elements) {
+          if (el.closest('#comment-widget-root') || el.closest('[data-comment-widget]')) continue;
+          if (el === document.body || el === document.documentElement) continue;
+          if (containerTags.includes(el.tagName)) continue;
+          
+          const htmlEl = el as HTMLElement;
+          const rect = htmlEl.getBoundingClientRect();
+          if (preferredTags.includes(el.tagName)) {
+            if (rect.width < viewportWidth * 0.95 && rect.height < viewportHeight * 0.95) {
+              return el;
+            }
+          }
         }
         
-        // If still no selector, maybe fall back to tag name + index?
-        // For now, let's keep it simple. If no ID/Class, undefined.
+        // Second pass: reasonable-sized elements
+        for (const el of elements) {
+          if (el.closest('#comment-widget-root') || el.closest('[data-comment-widget]')) continue;
+          if (el === document.body || el === document.documentElement) continue;
+          if (containerTags.includes(el.tagName)) continue;
+          
+          const htmlEl = el as HTMLElement;
+          const rect = htmlEl.getBoundingClientRect();
+          if (rect.width > maxContainerSize || rect.height > maxContainerSize) continue;
+          
+          if (el.tagName === 'DIV') {
+            if (htmlEl.textContent?.trim() || htmlEl.onclick || htmlEl.getAttribute('role') || htmlEl.getAttribute('data-') || (rect.width < viewportWidth * 0.7 && rect.height < viewportHeight * 0.7)) {
+              return el;
+            }
+            continue;
+          }
+          return el;
+        }
+        
+        // Fallback: first non-extremely-large element
+        for (const el of elements) {
+          if (el.closest('#comment-widget-root') || el.closest('[data-comment-widget]')) continue;
+          if (el === document.body || el === document.documentElement) continue;
+          const htmlEl = el as HTMLElement;
+          const rect = htmlEl.getBoundingClientRect();
+          if (rect.width < viewportWidth * 0.95 && rect.height < viewportHeight * 0.95) {
+            return el;
+          }
+        }
+        return null;
+      })();
+      
+      if (targetElement) {
+        // Generate a robust selector path
+        selector = generateSelector(targetElement);
       }
 
       const newComment: Comment = {
@@ -240,9 +333,11 @@ export const useComments = (storageAdapter: StorageAdapter, primaryColor: string
   }, []);
 
   const updateCommentPosition = useCallback(
-    (commentId: string, newX: number, newY: number) => {
+    (commentId: string, newX: number, newY: number, newSelector?: string) => {
       const updatedComments = state.comments.map((comment) =>
-        comment.id === commentId ? { ...comment, x: newX, y: newY } : comment
+        comment.id === commentId 
+          ? { ...comment, x: newX, y: newY, selector: newSelector !== undefined ? newSelector : comment.selector } 
+          : comment
       );
 
       setState((prev) => ({ ...prev, comments: updatedComments }));
@@ -283,7 +378,7 @@ export const useComments = (storageAdapter: StorageAdapter, primaryColor: string
     }
   }, []);
 
-  const activateCommentModeForPanel = useCallback(() => {
+  const activateCommentModeForPanel = useCallback((skipSidebar: boolean = false) => {
     if (activationInProgress.current) {
       return;
     }
@@ -303,7 +398,9 @@ export const useComments = (storageAdapter: StorageAdapter, primaryColor: string
       setActivationSource('panel');
     }
 
-    setIsSidebarOpen(true);
+    if (!skipSidebar) {
+      setIsSidebarOpen(true);
+    }
 
     setTimeout(() => {
       activationInProgress.current = false;

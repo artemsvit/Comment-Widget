@@ -286,6 +286,75 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
     }, 5000);
   }, [onDrag, onClick, onDragEnd, comment.x, comment.y, scrollOffsets]);
 
+  // Highlight linked element on hover
+  const [highlightedElement, setHighlightedElement] = React.useState<HTMLElement | null>(null);
+  
+  const handleMouseEnter = React.useCallback(() => {
+    if (comment.selector && !isDragging) {
+      try {
+        // Try to find the element using the selector
+        // First try exact match
+        let element = document.querySelector(comment.selector) as HTMLElement;
+        
+        // If not found and selector is a path, try finding by partial path
+        if (!element && comment.selector.includes(' > ')) {
+          const parts = comment.selector.split(' > ');
+          // Try last part only
+          const lastPart = parts[parts.length - 1];
+          element = document.querySelector(lastPart) as HTMLElement;
+        }
+        
+        // If still not found and selector starts with #, try finding by ID only
+        if (!element && comment.selector.startsWith('#')) {
+          const id = comment.selector.substring(1);
+          element = document.getElementById(id) as HTMLElement;
+        }
+        
+        if (element) {
+          setHighlightedElement(element);
+          const prevOutline = element.style.outline;
+          const prevOutlineOffset = element.style.outlineOffset;
+          element.style.outline = `2px dashed ${primaryColor}`;
+          element.style.outlineOffset = '2px';
+          element.style.transition = 'outline 0.2s ease-out';
+          
+          // Store original styles to restore later
+          (element as any).__commentWidgetOriginalOutline = prevOutline;
+          (element as any).__commentWidgetOriginalOutlineOffset = prevOutlineOffset;
+        }
+      } catch (e) {
+        // Selector might be invalid, ignore silently
+      }
+    }
+  }, [comment.selector, isDragging, primaryColor]);
+  
+  const handleMouseLeave = React.useCallback(() => {
+    if (highlightedElement) {
+      const prevOutline = (highlightedElement as any).__commentWidgetOriginalOutline || '';
+      const prevOutlineOffset = (highlightedElement as any).__commentWidgetOriginalOutlineOffset || '';
+      highlightedElement.style.outline = prevOutline;
+      highlightedElement.style.outlineOffset = prevOutlineOffset;
+      if (!prevOutline) {
+        highlightedElement.style.transition = '';
+      }
+      delete (highlightedElement as any).__commentWidgetOriginalOutline;
+      delete (highlightedElement as any).__commentWidgetOriginalOutlineOffset;
+      setHighlightedElement(null);
+    }
+  }, [highlightedElement]);
+  
+  // Cleanup on unmount
+  React.useEffect(() => {
+    return () => {
+      if (highlightedElement) {
+        const prevOutline = (highlightedElement as any).__commentWidgetOriginalOutline || '';
+        const prevOutlineOffset = (highlightedElement as any).__commentWidgetOriginalOutlineOffset || '';
+        highlightedElement.style.outline = prevOutline;
+        highlightedElement.style.outlineOffset = prevOutlineOffset;
+      }
+    };
+  }, [highlightedElement]);
+
   return (
     <motion.div
       ref={bubbleRef}
@@ -295,7 +364,7 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
         opacity: isThreadOpen && !isActive ? 0.3 : 1,
         zIndex: isDragging ? 1500 : 50
       }}
-      exit={{ scale: 0, opacity: 0 }}
+      exit={undefined}
       whileHover={{ scale: isDragging ? 1.2 : 1.1 }}
       className={`
         absolute select-none group
@@ -309,6 +378,8 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
       }}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* Invisible overlay to capture drags outside the bubble while dragging */}
       {isDragging && (
@@ -337,11 +408,31 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
               ? 'shadow-(--primary-color)/50' 
               : comment.resolved
                 ? `bg-green-500 ${isDragging ? 'shadow-green-500/50' : 'shadow-green-500/30'}`
-                : `bg-blue-500 ${isDragging ? 'shadow-blue-500/50' : 'shadow-blue-500/30'} hover:bg-blue-600`
+                : ''
           }
         `}
         style={{
-          backgroundColor: isActive ? primaryColor : undefined,
+          backgroundColor: isActive 
+            ? primaryColor 
+            : isThreadOpen && !isActive
+              ? undefined // Use gray-400 from className
+              : comment.resolved
+                ? undefined // Use green-500 from className
+                : primaryColor, // Use primary color for unresolved comments
+          boxShadow: !isThreadOpen && !isActive && !comment.resolved && !isActive
+            ? `0 4px 6px -1px ${primaryColor}30, 0 2px 4px -1px ${primaryColor}20`
+            : undefined,
+          transition: 'background-color 0.2s ease-out, box-shadow 0.2s ease-out, filter 0.2s ease-out',
+        }}
+        onMouseEnter={(e) => {
+          if (!isActive && !isThreadOpen && !comment.resolved) {
+            (e.currentTarget as HTMLElement).style.filter = 'brightness(0.9)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isActive && !isThreadOpen && !comment.resolved) {
+            (e.currentTarget as HTMLElement).style.filter = 'brightness(1)';
+          }
         }}
       >
         {comment.resolved ? (

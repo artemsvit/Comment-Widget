@@ -60,7 +60,7 @@ export const CommentSidebar: React.FC<CommentSidebarProps> = ({
           exit={{ width: 0, opacity: 0 }}
           transition={{ type: 'tween', duration: 0.3, ease: "easeInOut" }}
           className="bg-white border-l border-slate-200 flex flex-col h-full shadow-2xl pointer-events-auto"
-          style={{ zIndex: 2147483647 }}
+          style={{ zIndex: 2147483646 }}
           onClick={(e) => e.stopPropagation()} // Prevent clicks from closing/triggering widget
         >
           {/* Header */}

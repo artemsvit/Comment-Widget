@@ -29,7 +29,11 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
 
   const { refs, floatingStyles, update } = useFloating({
     placement: isSidebarOpen ? 'left-start' : 'right-start',
-    middleware: [offset(10), flip(), shift()],
+    middleware: [
+      offset({ mainAxis: 12, crossAxis: 0 }), // 12px horizontal offset from pin center
+      flip({ padding: 8 }), // Flip with padding to stay in viewport
+      shift({ padding: 8 }) // Shift with padding to stay in viewport
+    ],
     strategy: 'fixed',
     whileElementsMounted: autoUpdate,
   });
@@ -65,7 +69,7 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
           ref={refs.setFloating} 
           style={{ 
             ...floatingStyles, 
-            zIndex: 9999 
+            zIndex: 2147483647 
           }}
           className="font-sans"
         >
