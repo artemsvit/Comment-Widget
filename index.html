@@ -176,7 +176,7 @@
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-3 w-3 bg-primary-500"></span>
                   </span>
-                  <span class="font-medium text-slate-600">Click anywhere to comment!</span>
+                  <span class="font-medium text-slate-600">Click here to comment!</span>
                 </div>
               </div>
             </div>
@@ -491,10 +491,12 @@
     import { initCommentWidget, LocalStorageAdapter } from './src/index.ts';
     
     // Initialize the widget globally
+    const container = document.getElementById('hero-demo-area');
     const widget = initCommentWidget({
       storage: new LocalStorageAdapter('landing-page-comments'),
       primaryColor: '#7c3aed', // Matches the primary-600 color
-      enableKeyboardShortcuts: true
+      enableKeyboardShortcuts: true,
+      container: container
     });
 
     // Handle "Click to Comment" overlay interaction
@@ -509,8 +511,13 @@
         demoOverlay.style.opacity = '0';
         demoOverlay.style.pointerEvents = 'none'; // Let future clicks pass through to content/widget
         
+        // Calculate relative position
+        const rect = container.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
         // Activate comment mode
-        widget.startComment({ x: e.clientX, y: e.clientY });
+        widget.startComment({ x, y });
       });
 
       // Restore overlay when comment mode ends
