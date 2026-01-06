@@ -11,21 +11,27 @@ export default defineConfig({
       rollupTypes: true,
     }),
   ],
+  define: {
+    'process.env.NODE_ENV': '"production"',
+  },
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'CommentWidget',
-      formats: ['es', 'umd'],
-      fileName: (format) => `comment-widget.${format === 'es' ? 'esm' : 'umd'}.js`,
+      // Ensure we export as default for UMD
+      formats: ['es', 'umd', 'iife'],
+      fileName: (format) => `comment-widget.${format === 'es' ? 'esm' : format}.js`,
     },
     rollupOptions: {
-      external: ['react', 'react-dom'],
+      // external: ['react', 'react-dom'],
       output: {
-        globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM',
-        },
+        // globals: {
+        //   react: 'React',
+        //   'react-dom': 'ReactDOM',
+        // },
         assetFileNames: 'comment-widget.[ext]',
+        // Ensure IIFE has a proper global name
+        name: 'CommentWidget',
       },
     },
     sourcemap: true,

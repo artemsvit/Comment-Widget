@@ -9,9 +9,10 @@ import { MessageCircle } from 'lucide-react';
 
 interface CommentLayerProps {
   keyboardShortcut?: string;
+  isScoped?: boolean;
 }
 
-export const CommentLayer: React.FC<CommentLayerProps> = ({ keyboardShortcut = 'c' }) => {
+export const CommentLayer: React.FC<CommentLayerProps> = ({ keyboardShortcut = 'c', isScoped = false }) => {
   const {
     isVisible,
     activeCommentId,
@@ -295,18 +296,20 @@ export const CommentLayer: React.FC<CommentLayerProps> = ({ keyboardShortcut = '
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bg-black/80 text-white px-4 py-2 rounded-lg text-sm backdrop-blur-sm transform -translate-x-1/2 pointer-events-none font-medium shadow-xl border border-white/10"
+            className={`bg-black/80 text-white px-4 py-2 rounded-lg text-sm backdrop-blur-sm pointer-events-none font-medium shadow-xl border border-white/10 ${isScoped ? 'absolute' : 'fixed'}`}
             style={{
               zIndex: 1002,
               bottom: '2rem',
-              left: '50%',
+              left: 0,
+              right: 0,
+              margin: '0 auto',
+              width: 'fit-content',
               backgroundColor: 'rgba(0, 0, 0, 0.8)',
               color: 'white',
               padding: '0.5rem 1rem',
               borderRadius: '0.5rem',
               fontSize: '0.875rem',
               backdropFilter: 'blur(4px)',
-              transform: 'translateX(-50%)',
               pointerEvents: 'none',
               fontWeight: 500,
               boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',

@@ -229,7 +229,9 @@ export function init(config: CommentWidgetConfig): CommentWidgetAPI {
 
 // For UMD build - expose on window
 if (typeof window !== 'undefined') {
-  (window as any).CommentWidget = {
+  // Ensure we don't overwrite if it exists (though typically we want to set it)
+  // Use a temporary object to hold exports
+  const exports = {
     init,
     initCommentWidget,
     LocalStorageAdapter,
@@ -237,5 +239,14 @@ if (typeof window !== 'undefined') {
     FirebaseAdapter,
     SupabaseAdapter,
   };
+  
+  // Force assignment to window
+  (window as any).CommentWidget = exports;
+  
+  // Also expose properties directly on window for convenience
+  (window as any).initCommentWidget = initCommentWidget;
+  (window as any).LocalStorageAdapter = LocalStorageAdapter;
+  
+  console.log('Comment Widget Loaded (Bundled)');
 }
 

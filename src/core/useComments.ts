@@ -45,27 +45,37 @@ export const useComments = (storageAdapter: StorageAdapter, primaryColor: string
 
   const toggleVisibility = useCallback(() => {
     setState((prev) => {
-      const newVisible = !prev.isVisible;
+      // Logic: If either the overlay is visible OR the sidebar is open, treat "Toggle" as "Close All".
+      // Otherwise, "Open All".
+      const shouldClose = prev.isVisible || isSidebarOpen;
 
-      if (newVisible) {
-        setActivationSource('manual');
+      if (shouldClose) {
+        // Close everything
+        setIsSidebarOpen(false);
+        setActivationSource(null);
+        
+        return {
+          ...prev,
+          isVisible: false,
+          activeCommentId: null,
+          isCreatingComment: false,
+          newCommentPosition: null,
+          showPreviewDot: false,
+        };
       } else {
-        if (!isSidebarOpen) {
-          setActivationSource(null);
-        } else {
-          setActivationSource('manual');
-          return prev;
-        }
-      }
+        // Open everything
+        setActivationSource('manual');
+        setIsSidebarOpen(true);
 
-      return {
-        ...prev,
-        isVisible: newVisible,
-        activeCommentId: newVisible ? prev.activeCommentId : null,
-        isCreatingComment: false,
-        newCommentPosition: null,
-        showPreviewDot: false,
-      };
+        return {
+          ...prev,
+          isVisible: true,
+          activeCommentId: null, // Don't reset active comment id if we want to remember? No, start fresh.
+          isCreatingComment: false,
+          newCommentPosition: null,
+          showPreviewDot: false,
+        };
+      }
     });
   }, [isSidebarOpen]);
 

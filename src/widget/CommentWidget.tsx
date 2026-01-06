@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { MessageCircle } from 'lucide-react';
 import { CommentProvider } from '../core/CommentContext';
@@ -175,15 +176,37 @@ const WidgetButton: React.FC<WidgetButtonProps> = ({ config }) => {
         )}
       </motion.button>
 
-      {/* Sidebar */}
-      <div className="absolute top-0 right-0 h-full" style={{ zIndex: 1001 }}>
-        <CommentSidebar
-          isOpen={isSidebarOpen}
-          onClose={deactivateCommentModeForPanel}
-          comments={allComments}
-          onNavigateToComment={navigateToComment}
-        />
-      </div>
+      {/* Sidebar Wrapper - Respecting Portal config */}
+      {config.usePortal ? (
+        // Render to Body (Global)
+        typeof document !== 'undefined' && createPortal(
+          <div 
+            className="fixed top-0 right-0 h-full pointer-events-none flex flex-col justify-end" 
+            style={{ zIndex: 2147483647 }} 
+          >
+            <CommentSidebar
+              isOpen={isSidebarOpen}
+              onClose={() => deactivateCommentModeForPanel()}
+              comments={allComments}
+              onNavigateToComment={navigateToComment}
+            />
+          </div>,
+          document.body
+        )
+      ) : (
+        // Render inside Container (Scoped)
+        <div 
+          className="absolute top-0 right-0 h-full pointer-events-none flex flex-col justify-end" 
+          style={{ zIndex: 1001 }}
+        >
+          <CommentSidebar
+            isOpen={isSidebarOpen}
+            onClose={() => deactivateCommentModeForPanel()}
+            comments={allComments}
+            onNavigateToComment={navigateToComment}
+          />
+        </div>
+      )}
     </>
   );
 };
@@ -196,6 +219,7 @@ export const CommentWidget: React.FC<CommentWidgetProps> = ({ config }) => {
     >
       <CommentLayer 
         keyboardShortcut={config.enableKeyboardShortcuts ? config.keyboardShortcut : undefined}
+        isScoped={!!config.container}
       />
       <WidgetButton config={config} />
       

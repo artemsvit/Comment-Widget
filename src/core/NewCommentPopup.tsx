@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useFloating, offset, flip, shift, autoUpdate } from '@floating-ui/react';
 import { CommentForm } from './CommentForm';
 import { useCommentContext } from './CommentContext';

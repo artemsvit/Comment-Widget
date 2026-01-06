@@ -35,6 +35,14 @@ export interface CommentWidgetConfig {
    * If provided, the widget will be scoped to this element instead of the entire page.
    */
   container?: HTMLElement | null;
+
+  /**
+   * Whether to render the sidebar via a Portal to the document body.
+   * If true (default), the sidebar is fixed to the browser viewport.
+   * If false, the sidebar is rendered inside the widget container (useful for scoped demos).
+   * @default true
+   */
+  usePortal?: boolean;
 }
 
 export const defaultConfig: Partial<CommentWidgetConfig> = {
@@ -43,6 +51,7 @@ export const defaultConfig: Partial<CommentWidgetConfig> = {
   enableKeyboardShortcuts: true,
   keyboardShortcut: 'c',
   container: null,
+  usePortal: true,
 };
 
 export function mergeConfig(userConfig: CommentWidgetConfig): Required<CommentWidgetConfig> {

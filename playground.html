@@ -429,9 +429,7 @@
       </div>
 
       <!-- Sidebar -->
-      <div id="commentsSidebar" class="border-l border-slate-200 bg-white transition-all duration-300 ease-in-out w-0 overflow-hidden shrink-0 z-40">
-         <!-- Sidebar Content -->
-      </div>
+      <!-- Removed duplicate sidebar -->
     </div>
   </main>
   </div>
@@ -490,9 +488,10 @@
           storage = new CommentWidget.LocalStorageAdapter(storageKey);
       }
 
-      const container = document.getElementById('content-card');
+      // Use the outer preview container so comments can be placed anywhere, including background
+      const container = document.getElementById('preview-container');
       if (!container) {
-        console.warn('Comment Widget: Content card container not found, falling back to body');
+        console.warn('Comment Widget: Preview container not found, falling back to body');
       }
 
       // Initialize widget
@@ -502,7 +501,8 @@
         position: position,
         enableKeyboardShortcuts: enableShortcuts,
         keyboardShortcut: shortcutKey,
-        container: container || document.body // Fallback explicit
+        container: container || document.body, // Fallback explicit
+        usePortal: false // KEEP SIDEBAR INSIDE THE CONTAINER for demo purposes
       });
 
       // Store storage instance for sidebar access
@@ -577,12 +577,6 @@ const widget = initCommentWidget({
     document.getElementById('enableShortcuts').addEventListener('change', initWidget);
     document.getElementById('shortcutKey').addEventListener('input', initWidget);
 
-    // Expose functions to window for HTML event handlers
-    window.toggleCommentsSidebar = toggleCommentsSidebar;
-    window.filterComments = filterComments;
-    window.sortComments = sortComments;
-    window.navigateToComment = navigateToComment;
-    
     // Initialize widget on load
     window.addEventListener('load', () => {
       // Ensure DOM is ready
@@ -590,243 +584,6 @@ const widget = initCommentWidget({
     });
     
     lucide.createIcons();
-
-    // Comments Sidebar functionality
-    // (Managed by event listeners below)
-
-    function renderCommentsSidebar() {
-      const sidebar = document.getElementById('commentsSidebar');
-      
-      // Get comments from widget
-      let comments = [];
-      if (window.widgetInstance && window.widgetInstance.getAllComments) {
-        comments = window.widgetInstance.getAllComments();
-      }
-      
-      // Apply filters
-      let filteredComments = comments;
-      if (currentFilter === 'resolved') {
-        filteredComments = comments.filter(c => c.resolved);
-      } else if (currentFilter === 'unresolved') {
-        filteredComments = comments.filter(c => !c.resolved);
-      }
-      
-      // Apply sorting
-      filteredComments = sortCommentsArray(filteredComments, currentSort);
-      
-      sidebar.innerHTML = `
-        <div class="bg-white border-l border-slate-200 flex flex-col h-full shadow-lg" style="width: 320px;">
-          <div class="flex items-center justify-between p-4 border-b border-slate-200 bg-white">
-            <div class="flex items-center gap-2">
-              <h2 class="font-semibold text-black text-sm">Comments</h2>
-              <span class="text-white text-xs px-2 py-0.5 rounded-full font-medium" style="background-color: ${document.getElementById('primaryColor').value}">
-                ${filteredComments.length}
-              </span>
-            </div>
-            <button onclick="toggleCommentsSidebar()" class="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
-              <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-
-          <div class="p-4 border-b border-slate-200 bg-white">
-            <div class="flex gap-2 items-center justify-between">
-              <div class="flex gap-1">
-                ${['all', 'unresolved', 'resolved'].map(status => `
-                  <button
-                    onclick="filterComments('${status}')"
-                    class="px-2 py-1 text-xs font-medium rounded-full transition-colors ${getFilterButtonClass(status, currentFilter)}"
-                    style="${getFilterButtonStyle(status, currentFilter)}"
-                  >
-                    ${status === 'all' ? 'All' : status === 'resolved' ? 'Resolved' : 'Open'}
-                  </button>
-                `).join('')}
-              </div>
-              
-              <select onchange="sortComments(this.value)" class="custom-select text-xs !py-1 !pl-3 !pr-8 !h-8 bg-slate-50 border-slate-200">
-                <option value="page" ${currentSort === 'page' ? 'selected' : ''}>By Page</option>
-                <option value="author" ${currentSort === 'author' ? 'selected' : ''}>By Author</option>
-                <option value="date" ${currentSort === 'date' ? 'selected' : ''}>By Date</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="flex-1 overflow-y-auto bg-white">
-            ${filteredComments.length === 0 ? `
-              <div class="p-8 text-center text-slate-500">
-                <svg class="w-12 h-12 mx-auto opacity-30 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                </svg>
-                <p class="text-sm">No comments found</p>
-              </div>
-            ` : `
-              <div class="space-y-0">
-                ${filteredComments.map(comment => `
-                  <div
-                    onclick="navigateToComment('${comment.id}')"
-                    class="p-3 hover:bg-slate-50 border-b border-slate-100 cursor-pointer transition-colors"
-                  >
-                    <div class="flex items-start gap-2">
-                      <div class="w-2 h-2 rounded-full mt-2 shrink-0" style="background-color: ${comment.resolved ? '#10b981' : document.getElementById('primaryColor').value}"></div>
-                      
-                      <div class="flex-1 min-w-0">
-                        <p class="text-sm text-slate-900 line-clamp-2 mb-1 leading-relaxed">
-                          ${comment.text}
-                        </p>
-                        
-                        <div class="flex items-center flex-wrap gap-2 text-xs text-slate-500">
-                          <div class="flex items-center gap-1">
-                            <div class="w-4 h-4 rounded-full flex items-center justify-center" style="background-color: ${document.getElementById('primaryColor').value}1A">
-                              <span class="text-[10px] font-semibold" style="color: ${document.getElementById('primaryColor').value}">
-                                ${comment.author.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                            <span class="font-medium">${comment.author}</span>
-                          </div>
-                          
-                          <div class="flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span>${new Date(comment.timestamp).toLocaleDateString()}</span>
-                          </div>
-
-                          ${comment.replies.length > 0 ? `
-                            <div class="flex items-center gap-1">
-                              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
-                              </svg>
-                              <span>${comment.replies.length}</span>
-                            </div>
-                          ` : ''}
-
-                          ${comment.resolved ? `
-                            <div class="flex items-center gap-1" style="color: #10b981">
-                              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                              </svg>
-                              <span class="font-medium">Resolved</span>
-                            </div>
-                          ` : ''}
-                        </div>
-                      </div>
-
-                      <svg class="w-4 h-4 text-slate-400 shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                      </svg>
-                    </div>
-                  </div>
-                `).join('')}
-              </div>
-            `}
-          </div>
-        </div>
-      `;
-      
-      // Update comments count
-      updateCommentsCount();
-    }
-
-    function sortCommentsArray(comments, sortBy) {
-      const sorted = [...comments];
-      switch (sortBy) {
-        case 'author':
-          return sorted.sort((a, b) => (a.author || 'Anonymous').localeCompare(b.author || 'Anonymous'));
-        case 'date':
-          return sorted.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        case 'page':
-        default:
-          return sorted.sort((a, b) => (a.pageUrl || '/').localeCompare(b.pageUrl || '/'));
-      }
-    }
-
-    function updateCommentsCount() {
-      const comments = window.widgetInstance && window.widgetInstance.getAllComments ? window.widgetInstance.getAllComments() : [];
-      const countEl = document.getElementById('commentsCount');
-      if (countEl) countEl.textContent = comments.length;
-    }
-
-    function filterComments(filter) {
-      currentFilter = filter;
-      renderCommentsSidebar();
-    }
-
-    function sortComments(sortBy) {
-      currentSort = sortBy;
-      renderCommentsSidebar();
-    }
-
-    function navigateToComment(commentId) {
-      if (window.widgetInstance) {
-        // Use the widget's navigateToComment method
-        window.widgetInstance.navigateToComment(commentId);
-        // Sidebar stays open to show context
-      }
-    }
-
-    // Global variables for sidebar state
-    let currentFilter = 'all';
-    let currentSort = 'page';
-
-    function getFilterButtonClass(status, current) {
-      return status === current ? 'text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200';
-    }
-
-    function getFilterButtonStyle(status, current) {
-      return status === current ? `background-color: ${document.getElementById('primaryColor').value}` : '';
-    }
-
-    // Sync sidebar with widget state
-    window.addEventListener('comment-widget-state-change', (e) => {
-      const isVisible = e.detail.isVisible;
-      const sidebar = document.getElementById('commentsSidebar');
-      const button = document.getElementById('toggleCommentsSidebar');
-      
-      if (isVisible) {
-        // Open sidebar
-        sidebar.style.width = '320px';
-        renderCommentsSidebar();
-        if (button) {
-          button.classList.remove('bg-white', 'border-slate-200', 'text-slate-600', 'shadow-sm');
-          button.classList.add('bg-primary-600', 'border-primary-600', 'text-white', 'shadow-md');
-        }
-      } else {
-        // Close sidebar
-        sidebar.style.width = '0';
-        if (button) {
-          button.classList.remove('bg-primary-600', 'border-primary-600', 'text-white', 'shadow-md');
-          button.classList.add('bg-white', 'border-slate-200', 'text-slate-600', 'shadow-sm');
-        }
-      }
-    });
-
-    // Toggle sidebar acts as master toggle for comment mode
-    function toggleCommentsSidebar() {
-      if (window.widgetInstance) {
-        const sidebar = document.getElementById('commentsSidebar');
-        const isOpen = sidebar.style.width === '320px';
-        
-        if (isOpen) {
-          window.widgetInstance.hide();
-        } else {
-          window.widgetInstance.show();
-        }
-      }
-    }
-
-    // Listen for comment changes (add/delete/update)
-    window.addEventListener('comment-widget-event', (e) => {
-      if (e.detail && e.detail.type === 'COMMENTS_CHANGED') {
-        // Update sidebar if open
-        const sidebar = document.getElementById('commentsSidebar');
-        if (sidebar.style.width === '320px') {
-           renderCommentsSidebar();
-        }
-        // Update count always
-        updateCommentsCount();
-      }
-    });
   </script>
 </body>
 </html>
