@@ -16,6 +16,78 @@ interface WidgetButtonProps {
   config: Required<CommentWidgetConfig>;
 }
 
+interface ScopedSidebarProps {
+  container: HTMLElement;
+  isOpen: boolean;
+  onClose: () => void;
+  comments: any[];
+  onNavigateToComment: (comment: any) => void;
+}
+
+// Sidebar component scoped to a container - uses fixed positioning but calculates position relative to container
+const ScopedSidebar: React.FC<ScopedSidebarProps> = ({
+  container,
+  isOpen,
+  onClose,
+  comments,
+  onNavigateToComment
+}) => {
+  const [position, setPosition] = React.useState({ top: 0, right: 0, height: 0 });
+
+  React.useEffect(() => {
+    const updatePosition = () => {
+      const rect = container.getBoundingClientRect();
+      setPosition({
+        top: rect.top,
+        right: window.innerWidth - rect.right,
+        height: rect.height
+      });
+    };
+
+    updatePosition();
+    
+    // Listen to window events
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, { passive: true });
+    
+    // Also listen to container scroll if it's scrollable
+    container.addEventListener('scroll', updatePosition, { passive: true });
+    
+    // Use ResizeObserver to detect container size changes
+    const resizeObserver = new ResizeObserver(updatePosition);
+    resizeObserver.observe(container);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition);
+      container.removeEventListener('scroll', updatePosition);
+      resizeObserver.disconnect();
+    };
+  }, [container]);
+
+  return typeof document !== 'undefined' && createPortal(
+    <div 
+      className="fixed pointer-events-none flex flex-col justify-end" 
+      style={{ 
+        zIndex: 2147483647,
+        top: `${position.top}px`,
+        right: `${position.right}px`,
+        height: `${position.height}px`,
+        width: 'auto'
+      }}
+      data-comment-widget="sidebar"
+    >
+      <CommentSidebar
+        isOpen={isOpen}
+        onClose={onClose}
+        comments={comments}
+        onNavigateToComment={onNavigateToComment}
+      />
+    </div>,
+    document.body
+  );
+};
+
 const WidgetButton: React.FC<WidgetButtonProps> = ({ config }) => {
   const {
     getAllComments,
@@ -32,20 +104,40 @@ const WidgetButton: React.FC<WidgetButtonProps> = ({ config }) => {
   // Push page/container content when sidebar opens
   React.useEffect(() => {
     const SIDEBAR_WIDTH_PX = 320;
-    // Decide target: scoped container vs. full page
-    const targetEl: HTMLElement | null = config.usePortal ? document.body : (config.container || null);
+    
+    // Find the target element to push:
+    // 1. Look for .preview-content within the container (if container exists)
+    // 2. Otherwise use the container itself
+    // 3. Fallback to document.body
+    let targetEl: HTMLElement | null = null;
+    
+    if (config.container) {
+      // Try to find .preview-content within the container
+      const previewContent = config.container.querySelector('.preview-content') as HTMLElement;
+      targetEl = previewContent || config.container;
+    } else {
+      targetEl = document.body;
+    }
+    
     if (!targetEl) return;
+    
     const prevPaddingRight = targetEl.style.paddingRight || '';
     const prevTransition = targetEl.style.transition || '';
+    const prevOverflowX = targetEl.style.overflowX || '';
+    
     // Add a smooth transition for layout shift
     targetEl.style.transition = prevTransition || 'padding-right 0.25s ease';
+    // Prevent horizontal scrollbar from appearing
+    targetEl.style.overflowX = 'hidden';
     targetEl.style.paddingRight = isSidebarOpen ? `${SIDEBAR_WIDTH_PX}px` : '0px';
+    
     return () => {
       // Restore previous inline styles on unmount
-      targetEl.style.paddingRight = prevPaddingRight;
-      targetEl.style.transition = prevTransition;
+      targetEl!.style.paddingRight = prevPaddingRight;
+      targetEl!.style.transition = prevTransition;
+      targetEl!.style.overflowX = prevOverflowX;
     };
-  }, [isSidebarOpen, config.usePortal, config.container]);
+  }, [isSidebarOpen, config.container]);
 
   // Notify when visibility changes
   React.useEffect(() => {
@@ -196,7 +288,7 @@ const WidgetButton: React.FC<WidgetButtonProps> = ({ config }) => {
 
       {/* Sidebar Wrapper - Respecting Portal config */}
       {config.usePortal ? (
-        // Render to Body (Global)
+        // Render to Body (Global) - fixed to viewport
         typeof document !== 'undefined' && createPortal(
           <div 
             className="fixed top-0 right-0 h-full pointer-events-none flex flex-col justify-end" 
@@ -213,19 +305,16 @@ const WidgetButton: React.FC<WidgetButtonProps> = ({ config }) => {
           document.body
         )
       ) : (
-        // Render inside Container (Scoped)
-        <div 
-          className="absolute top-0 right-0 h-full pointer-events-none flex flex-col justify-end" 
-          style={{ zIndex: 1001 }}
-          data-comment-widget="sidebar"
-        >
-          <CommentSidebar
+        // Render inside Container (Scoped) - use fixed positioning but calculate position relative to container
+        config.container ? (
+          <ScopedSidebar
+            container={config.container}
             isOpen={isSidebarOpen}
             onClose={() => deactivateCommentModeForPanel()}
             comments={allComments}
             onNavigateToComment={navigateToComment}
           />
-        </div>
+        ) : null
       )}
     </>
   );

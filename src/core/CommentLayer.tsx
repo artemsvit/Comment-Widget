@@ -363,7 +363,7 @@ export const CommentLayer: React.FC<CommentLayerProps> = ({ keyboardShortcut = '
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className={`bg-black/80 text-white px-4 py-2 rounded-lg text-sm backdrop-blur-sm pointer-events-none font-medium shadow-xl border border-white/10 ${isScoped ? 'absolute' : 'fixed'}`}
+            className="fixed bg-black/80 text-white px-4 py-2 rounded-lg text-sm backdrop-blur-sm pointer-events-none font-medium shadow-xl border border-white/10"
             style={{
               zIndex: 1002,
               bottom: '2rem',
