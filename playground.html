@@ -488,8 +488,8 @@
           storage = new CommentWidget.LocalStorageAdapter(storageKey);
       }
 
-      // Use the outer preview container so comments can be placed anywhere, including background
-      const container = document.getElementById('preview-container');
+      // Use the preview content container (the scrollable area)
+      const container = document.querySelector('.preview-content');
       if (!container) {
         console.warn('Comment Widget: Preview container not found, falling back to body');
       }

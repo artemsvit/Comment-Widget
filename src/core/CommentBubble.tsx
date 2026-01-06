@@ -11,6 +11,7 @@ interface CommentBubbleProps {
   onDragEnd?: (finalX: number, finalY: number) => void;
   isThreadOpen?: boolean;
   primaryColor: string;
+  scrollOffsets?: { x: number; y: number };
 }
 
 export const CommentBubble: React.FC<CommentBubbleProps> = ({ 
@@ -20,7 +21,8 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
   onDrag, 
   onDragEnd, 
   isThreadOpen,
-  primaryColor 
+  primaryColor,
+  scrollOffsets = { x: 0, y: 0 }
 }) => {
   const replyCount = comment.replies.length;
   const [isDragging, setIsDragging] = useState(false);
@@ -36,13 +38,16 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
     e.stopPropagation();
     
     const startTime = Date.now();
-    // We need to calculate offset from the comment center or current position
-    // But since we are updating comment.x/y directly, we should track the delta
-    const startMousePos = { x: e.clientX, y: e.clientY };
+    // comment.x and comment.y are already in the correct coordinate system (container-relative for scoped, document-relative for full-page)
+    // Convert viewport click coordinates to the same coordinate system
+    const startMousePos = { 
+      x: e.clientX + scrollOffsets.x, 
+      y: e.clientY + scrollOffsets.y 
+    };
     const startCommentPos = { x: comment.x, y: comment.y };
     
     dragStartTime.current = startTime;
-    clickStartPos.current = startMousePos;
+    clickStartPos.current = { x: e.clientX, y: e.clientY }; // Store viewport coords for distance calc
     
     let hasDragged = false;
     let cleanupCalled = false;
@@ -62,9 +67,11 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
   const handleMouseMove = (moveEvent: MouseEvent) => {
       if (cleanupCalled) return;
       
+      // Calculate distance in viewport coordinates for threshold check
+      const viewportStart = clickStartPos.current || { x: 0, y: 0 };
       const distance = Math.sqrt(
-        Math.pow(moveEvent.clientX - startMousePos.x, 2) + 
-        Math.pow(moveEvent.clientY - startMousePos.y, 2)
+        Math.pow(moveEvent.clientX - viewportStart.x, 2) + 
+        Math.pow(moveEvent.clientY - viewportStart.y, 2)
       );
       
       if (!hasDragged && distance > dragThreshold) {
@@ -73,13 +80,26 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
       }
       
       if (hasDragged && onDrag) {
-        // Calculate the delta from the start position
-        const deltaX = moveEvent.clientX - startMousePos.x;
-        const deltaY = moveEvent.clientY - startMousePos.y;
+        // Get current scroll offsets (may have changed during drag)
+        const root = document.getElementById('comment-widget-root');
+        let currentScrollX = window.scrollX;
+        let currentScrollY = window.scrollY;
         
-        // Apply the delta to the initial comment position
-        // This ensures the bubble moves relative to where it was clicked,
-        // preventing the "jump to cursor" effect
+        // If scoped, use container scroll instead
+        if (root && root.parentElement && root.parentElement !== document.body) {
+          currentScrollX = root.parentElement.scrollLeft;
+          currentScrollY = root.parentElement.scrollTop;
+        }
+        
+        // Convert current mouse position to the same coordinate system as comment
+        const currentPosX = moveEvent.clientX + currentScrollX;
+        const currentPosY = moveEvent.clientY + currentScrollY;
+        
+        // Calculate delta
+        const deltaX = currentPosX - startMousePos.x;
+        const deltaY = currentPosY - startMousePos.y;
+        
+        // Apply delta to initial comment position
         const newX = startCommentPos.x + deltaX;
         const newY = startCommentPos.y + deltaY;
 
@@ -93,14 +113,25 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
     
     const handleMouseUp = (upEvent: MouseEvent) => {
       const timeDiff = Date.now() - startTime;
+      const viewportStart = clickStartPos.current || { x: 0, y: 0 };
       const distance = Math.sqrt(
-        Math.pow(upEvent.clientX - startMousePos.x, 2) + 
-        Math.pow(upEvent.clientY - startMousePos.y, 2)
+        Math.pow(upEvent.clientX - viewportStart.x, 2) + 
+        Math.pow(upEvent.clientY - viewportStart.y, 2)
       );
       
       if (hasDragged && onDrag) {
-        const deltaX = upEvent.clientX - startMousePos.x;
-        const deltaY = upEvent.clientY - startMousePos.y;
+        // Get current scroll offsets
+        const root = document.getElementById('comment-widget-root');
+        let currentScrollX = window.scrollX;
+        let currentScrollY = window.scrollY;
+        
+        if (root && root.parentElement && root.parentElement !== document.body) {
+          currentScrollX = root.parentElement.scrollLeft;
+          currentScrollY = root.parentElement.scrollTop;
+        }
+        
+        const deltaX = (upEvent.clientX + currentScrollX) - startMousePos.x;
+        const deltaY = (upEvent.clientY + currentScrollY) - startMousePos.y;
         const newX = startCommentPos.x + deltaX;
         const newY = startCommentPos.y + deltaY;
 
@@ -129,18 +160,22 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
         cleanup();
       }
     }, 5000);
-  }, [onDrag, onClick, onDragEnd]);
+  }, [onDrag, onClick, onDragEnd, comment.x, comment.y, scrollOffsets]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     e.stopPropagation();
     
     const touch = e.touches[0];
     const startTime = Date.now();
-    const startTouchPos = { x: touch.clientX, y: touch.clientY };
+    // Convert viewport coordinates to the same coordinate system as comment
+    const startTouchPos = { 
+      x: touch.clientX + scrollOffsets.x, 
+      y: touch.clientY + scrollOffsets.y 
+    };
     const startCommentPos = { x: comment.x, y: comment.y };
 
     dragStartTime.current = startTime;
-    clickStartPos.current = startTouchPos;
+    clickStartPos.current = { x: touch.clientX, y: touch.clientY }; // Store viewport coords
     
     let hasDragged = false;
     let cleanupCalled = false;
@@ -161,9 +196,10 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
       if (cleanupCalled) return;
       
       const touch = moveEvent.touches[0];
+      const viewportStart = clickStartPos.current || { x: 0, y: 0 };
       const distance = Math.sqrt(
-        Math.pow(touch.clientX - startTouchPos.x, 2) + 
-        Math.pow(touch.clientY - startTouchPos.y, 2)
+        Math.pow(touch.clientX - viewportStart.x, 2) + 
+        Math.pow(touch.clientY - viewportStart.y, 2)
       );
       
       if (!hasDragged && distance > dragThreshold) {
@@ -172,8 +208,21 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
       }
       
       if (hasDragged && onDrag) {
-        const deltaX = touch.clientX - startTouchPos.x;
-        const deltaY = touch.clientY - startTouchPos.y;
+        // Get current scroll offsets
+        const root = document.getElementById('comment-widget-root');
+        let currentScrollX = window.scrollX;
+        let currentScrollY = window.scrollY;
+        
+        if (root && root.parentElement && root.parentElement !== document.body) {
+          currentScrollX = root.parentElement.scrollLeft;
+          currentScrollY = root.parentElement.scrollTop;
+        }
+        
+        const currentPosX = touch.clientX + currentScrollX;
+        const currentPosY = touch.clientY + currentScrollY;
+        
+        const deltaX = currentPosX - startTouchPos.x;
+        const deltaY = currentPosY - startTouchPos.y;
         const newX = startCommentPos.x + deltaX;
         const newY = startCommentPos.y + deltaY;
 
@@ -188,14 +237,25 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
     const handleTouchEnd = (upEvent: TouchEvent) => {
       const timeDiff = Date.now() - startTime;
       const touch = upEvent.changedTouches[0];
+      const viewportStart = clickStartPos.current || { x: 0, y: 0 };
       const distance = Math.sqrt(
-        Math.pow(touch.clientX - startTouchPos.x, 2) + 
-        Math.pow(touch.clientY - startTouchPos.y, 2)
+        Math.pow(touch.clientX - viewportStart.x, 2) + 
+        Math.pow(touch.clientY - viewportStart.y, 2)
       );
       
       if (hasDragged && onDrag) {
-        const deltaX = touch.clientX - startTouchPos.x;
-        const deltaY = touch.clientY - startTouchPos.y;
+        // Get current scroll offsets
+        const root = document.getElementById('comment-widget-root');
+        let currentScrollX = window.scrollX;
+        let currentScrollY = window.scrollY;
+        
+        if (root && root.parentElement && root.parentElement !== document.body) {
+          currentScrollX = root.parentElement.scrollLeft;
+          currentScrollY = root.parentElement.scrollTop;
+        }
+        
+        const deltaX = (touch.clientX + currentScrollX) - startTouchPos.x;
+        const deltaY = (touch.clientY + currentScrollY) - startTouchPos.y;
         const newX = startCommentPos.x + deltaX;
         const newY = startCommentPos.y + deltaY;
 
@@ -224,7 +284,7 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
         cleanup();
       }
     }, 5000);
-  }, [onDrag, onClick, onDragEnd]);
+  }, [onDrag, onClick, onDragEnd, comment.x, comment.y, scrollOffsets]);
 
   return (
     <motion.div

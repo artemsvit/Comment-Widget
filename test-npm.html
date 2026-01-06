@@ -46,7 +46,9 @@
             const widget = initCommentWidget({
                 storage: new LocalStorageAdapter('npm-demo-comments'),
                 primaryColor: '#10b981', // Emerald-500 to distinguish from CDN demo
-                position: 'bottom-right'
+                position: 'bottom-right',
+                enableKeyboardShortcuts: true,
+                keyboardShortcut: 'c'
             });
 
             console.log('Widget initialized successfully via ESM!');

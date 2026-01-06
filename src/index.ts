@@ -155,15 +155,46 @@ export function initCommentWidget(config: CommentWidgetConfig): CommentWidgetAPI
       (widgetContainer as any).__observers = [resizeObserver, mutationObserver];
 
     } else {
-      // Full screen fixed
-      widgetContainer.style.position = 'fixed';
+      // Full page absolute - covers entire document
+      widgetContainer.style.position = 'absolute';
       widgetContainer.style.top = '0';
       widgetContainer.style.left = '0';
       widgetContainer.style.width = '100%';
-      widgetContainer.style.height = '100%';
+      // Height will be set to document height via ResizeObserver
+      widgetContainer.style.height = `${Math.max(document.documentElement.scrollHeight, document.body.scrollHeight, window.innerHeight)}px`;
       widgetContainer.style.pointerEvents = 'none';
       widgetContainer.style.zIndex = '999999';
       document.body.appendChild(widgetContainer);
+
+      // Sync height with document scrollHeight for full-page mode
+      const updateFullPageHeight = () => {
+        if (widgetContainer) {
+          const docHeight = Math.max(
+            document.documentElement.scrollHeight,
+            document.body.scrollHeight,
+            window.innerHeight
+          );
+          widgetContainer.style.height = `${docHeight}px`;
+        }
+      };
+
+      const resizeObserver = new ResizeObserver(updateFullPageHeight);
+      resizeObserver.observe(document.body);
+      resizeObserver.observe(document.documentElement);
+
+      const mutationObserver = new MutationObserver(updateFullPageHeight);
+      mutationObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['style', 'class']
+      });
+
+      // Initial sync
+      updateFullPageHeight();
+
+      // Store observers for cleanup
+      (widgetContainer as any).__observers = [resizeObserver, mutationObserver];
     }
   }
 

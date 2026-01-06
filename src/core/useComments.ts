@@ -124,22 +124,18 @@ export const useComments = (storageAdapter: StorageAdapter, primaryColor: string
     (text: string, author: string = 'Anonymous') => {
       if (!state.newCommentPosition) return;
 
+      // newCommentPosition is already in document-relative coordinates
+      const docX = state.newCommentPosition.x;
+      const docY = state.newCommentPosition.y;
+
       // Identify the element under the comment position
+      // Convert document coordinates to viewport coordinates for element detection
       let selector: string | undefined;
+      const viewportX = docX - window.scrollX;
+      const viewportY = docY - window.scrollY;
       
-      // We need to temporarily hide the overlay to check what's underneath
-      // But since we are in the logic, we can check based on coordinates
-      const x = state.newCommentPosition.x;
-      const y = state.newCommentPosition.y;
-      
-      // Get the element at the position. 
-      // Note: The widget overlay must be pointer-events-none or we must use a way to pierce it.
-      // Since we are in the 'create' flow, the overlay is active. 
-      // However, we can use the document.elementFromPoint API.
-      // We might need to hide our own UI elements temporarily if they block it.
-      
-      // Simple strategy: Check for elements with IDs or specific classes
-      const elements = document.elementsFromPoint(x, y);
+      // Get the element at the position (using viewport coordinates)
+      const elements = document.elementsFromPoint(viewportX, viewportY);
       
       // Filter out our own widget elements
       const targetElement = elements.find(el => 
@@ -166,8 +162,8 @@ export const useComments = (storageAdapter: StorageAdapter, primaryColor: string
 
       const newComment: Comment = {
         id: uuidv4(),
-        x: state.newCommentPosition.x,
-        y: state.newCommentPosition.y,
+        x: docX, // Already document-relative
+        y: docY, // Already document-relative
         text,
         author,
         timestamp: new Date(),
@@ -351,4 +347,3 @@ export const useComments = (storageAdapter: StorageAdapter, primaryColor: string
     deactivateCommentModeForPanel,
   };
 };
-

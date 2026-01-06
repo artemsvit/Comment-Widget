@@ -29,6 +29,24 @@ const WidgetButton: React.FC<WidgetButtonProps> = ({ config }) => {
     primaryColor,
   } = useCommentContext();
 
+  // Push page/container content when sidebar opens
+  React.useEffect(() => {
+    const SIDEBAR_WIDTH_PX = 320;
+    // Decide target: scoped container vs. full page
+    const targetEl: HTMLElement | null = config.usePortal ? document.body : (config.container || null);
+    if (!targetEl) return;
+    const prevPaddingRight = targetEl.style.paddingRight || '';
+    const prevTransition = targetEl.style.transition || '';
+    // Add a smooth transition for layout shift
+    targetEl.style.transition = prevTransition || 'padding-right 0.25s ease';
+    targetEl.style.paddingRight = isSidebarOpen ? `${SIDEBAR_WIDTH_PX}px` : '0px';
+    return () => {
+      // Restore previous inline styles on unmount
+      targetEl.style.paddingRight = prevPaddingRight;
+      targetEl.style.transition = prevTransition;
+    };
+  }, [isSidebarOpen, config.usePortal, config.container]);
+
   // Notify when visibility changes
   React.useEffect(() => {
     window.dispatchEvent(new CustomEvent('comment-widget-state-change', { 
@@ -183,6 +201,7 @@ const WidgetButton: React.FC<WidgetButtonProps> = ({ config }) => {
           <div 
             className="fixed top-0 right-0 h-full pointer-events-none flex flex-col justify-end" 
             style={{ zIndex: 2147483647 }} 
+            data-comment-widget="sidebar"
           >
             <CommentSidebar
               isOpen={isSidebarOpen}
@@ -198,6 +217,7 @@ const WidgetButton: React.FC<WidgetButtonProps> = ({ config }) => {
         <div 
           className="absolute top-0 right-0 h-full pointer-events-none flex flex-col justify-end" 
           style={{ zIndex: 1001 }}
+          data-comment-widget="sidebar"
         >
           <CommentSidebar
             isOpen={isSidebarOpen}
@@ -232,4 +252,3 @@ export const CommentWidget: React.FC<CommentWidgetProps> = ({ config }) => {
     </CommentProvider>
   );
 };
-

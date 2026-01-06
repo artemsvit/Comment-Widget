@@ -1,6 +1,6 @@
 {
   "name": "@commentwidget/core",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "description": "A powerful contextual commenting system for any website",
   "main": "dist/comment-widget.esm.js",
