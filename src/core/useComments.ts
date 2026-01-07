@@ -193,55 +193,91 @@ export const useComments = (storageAdapter: StorageAdapter, primaryColor: string
       // Get the element at the position (using viewport coordinates)
       const elements = document.elementsFromPoint(viewportX, viewportY);
       
-      // Find low-level element using improved logic
+      // Find low-level element using improved logic - prefer medium-sized blocks
       const targetElement = (() => {
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
         const maxContainerSize = Math.max(viewportWidth, viewportHeight) * 0.9;
-        const preferredTags = ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT', 'IMG', 'SVG', 'SPAN', 'STRONG', 'EM', 'B', 'I', 'CODE', 'PRE', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'TD', 'TH'];
+        const minElementSize = 50; // Minimum size for an element to be considered (50px)
+        const minArea = 2000; // Minimum area (width * height) for an element to be considered
+        
+        // Tags to exclude (small inline elements)
+        const excludedTags = ['SPAN', 'STRONG', 'EM', 'B', 'I', 'CODE', 'LABEL', 'SMALL', 'SUB', 'SUP', 'MARK'];
         const containerTags = ['BODY', 'HTML'];
+        const preferredBlockTags = ['SECTION', 'ARTICLE', 'ASIDE', 'HEADER', 'FOOTER', 'NAV', 'MAIN', 'DIV'];
         
-        // First pass: preferred elements
+        // First pass: look for elements with IDs (most reliable, prefer medium-sized)
         for (const el of elements) {
           if (el.closest('#comment-widget-root') || el.closest('[data-comment-widget]')) continue;
           if (el === document.body || el === document.documentElement) continue;
           if (containerTags.includes(el.tagName)) continue;
+          if (excludedTags.includes(el.tagName)) continue;
           
           const htmlEl = el as HTMLElement;
-          const rect = htmlEl.getBoundingClientRect();
-          if (preferredTags.includes(el.tagName)) {
-            if (rect.width < viewportWidth * 0.95 && rect.height < viewportHeight * 0.95) {
+          if (htmlEl.id) {
+            const rect = htmlEl.getBoundingClientRect();
+            const elementWidth = rect.width;
+            const elementHeight = rect.height;
+            const area = elementWidth * elementHeight;
+            
+            // Must be medium-sized (not too small, not too large)
+            if (elementWidth >= minElementSize && elementHeight >= minElementSize &&
+                area >= minArea &&
+                elementWidth < viewportWidth * 0.9 && elementHeight < viewportHeight * 0.9) {
               return el;
             }
           }
         }
         
-        // Second pass: reasonable-sized elements
+        // Second pass: look for preferred block-level elements (medium-sized)
         for (const el of elements) {
           if (el.closest('#comment-widget-root') || el.closest('[data-comment-widget]')) continue;
           if (el === document.body || el === document.documentElement) continue;
           if (containerTags.includes(el.tagName)) continue;
+          if (excludedTags.includes(el.tagName)) continue;
           
           const htmlEl = el as HTMLElement;
           const rect = htmlEl.getBoundingClientRect();
-          if (rect.width > maxContainerSize || rect.height > maxContainerSize) continue;
+          const elementWidth = rect.width;
+          const elementHeight = rect.height;
+          const area = elementWidth * elementHeight;
           
-          if (el.tagName === 'DIV') {
-            if (htmlEl.textContent?.trim() || htmlEl.onclick || htmlEl.getAttribute('role') || htmlEl.getAttribute('data-') || (rect.width < viewportWidth * 0.7 && rect.height < viewportHeight * 0.7)) {
-              return el;
-            }
-            continue;
+          // Skip elements that are too small or too large
+          if (elementWidth < minElementSize || elementHeight < minElementSize || area < minArea) continue;
+          if (elementWidth > maxContainerSize || elementHeight > maxContainerSize) continue;
+          
+          // Prefer block-level elements
+          if (preferredBlockTags.includes(el.tagName)) {
+            return el;
           }
-          return el;
+          
+          // Accept interactive elements if they're medium-sized
+          if (['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) {
+            return el;
+          }
+          
+          // Accept heading and paragraph elements if medium-sized
+          if (['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P'].includes(el.tagName)) {
+            return el;
+          }
         }
         
-        // Fallback: first non-extremely-large element
+        // Third pass: look for any medium-sized element (fallback)
         for (const el of elements) {
           if (el.closest('#comment-widget-root') || el.closest('[data-comment-widget]')) continue;
           if (el === document.body || el === document.documentElement) continue;
+          if (excludedTags.includes(el.tagName)) continue;
+          
           const htmlEl = el as HTMLElement;
           const rect = htmlEl.getBoundingClientRect();
-          if (rect.width < viewportWidth * 0.95 && rect.height < viewportHeight * 0.95) {
+          const elementWidth = rect.width;
+          const elementHeight = rect.height;
+          const area = elementWidth * elementHeight;
+          
+          // Must be medium-sized
+          if (elementWidth >= minElementSize && elementHeight >= minElementSize &&
+              area >= minArea &&
+              elementWidth < viewportWidth * 0.9 && elementHeight < viewportHeight * 0.9) {
             return el;
           }
         }
@@ -375,7 +411,55 @@ export const useComments = (storageAdapter: StorageAdapter, primaryColor: string
 
     if (comment.pageUrl && comment.pageUrl !== currentPath) {
       window.location.href = comment.pageUrl;
+      return; // Don't scroll if navigating to a different page
     }
+
+    // Smooth scroll to comment pin
+    // Use requestAnimationFrame to ensure DOM is ready and layout is updated
+    requestAnimationFrame(() => {
+      // Check if we're in a scoped container
+      const root = document.getElementById('comment-widget-root');
+      const isScoped = root && root.parentElement && root.parentElement !== document.body;
+      
+      if (isScoped && root && root.parentElement) {
+        // Scoped container: scroll the container
+        const container = root.parentElement;
+        const containerRect = container.getBoundingClientRect();
+        
+        // Calculate container's document offset
+        const containerDocX = containerRect.left + window.scrollX;
+        const containerDocY = containerRect.top + window.scrollY;
+        
+        // Convert comment position (document coordinates) to container-relative coordinates
+        const containerRelativeX = comment.x - containerDocX;
+        const containerRelativeY = comment.y - containerDocY;
+        
+        // Scroll container to show the comment pin (with some offset to center it better)
+        // Account for pin size (approximately 12px radius) and add some padding
+        const offsetY = 100; // Offset to show pin with some context above
+        const scrollY = Math.max(0, containerRelativeY - offsetY);
+        const scrollX = Math.max(0, containerRelativeX);
+        
+        container.scrollTo({
+          top: scrollY,
+          left: scrollX,
+          behavior: 'smooth'
+        });
+      } else {
+        // Full-page: scroll the window
+        // Comment position is in document coordinates
+        // Add offset to show pin with some context above
+        const offsetY = 100;
+        const scrollY = Math.max(0, comment.y - offsetY);
+        const scrollX = Math.max(0, comment.x);
+        
+        window.scrollTo({
+          top: scrollY,
+          left: scrollX,
+          behavior: 'smooth'
+        });
+      }
+    });
   }, []);
 
   const activateCommentModeForPanel = useCallback((skipSidebar: boolean = false) => {

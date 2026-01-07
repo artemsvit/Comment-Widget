@@ -78,7 +78,7 @@
         </div>
         <div class="hidden md:flex items-center gap-8">
           <a href="index.html" class="text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors">Home</a>
-          <a href="playground.html" class="text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors">Live Demo</a>
+          <a href="playground.html" class="text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors">Playground</a>
           <a href="https://github.com/yourorg/comment-widget" target="_blank" class="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors">
             <i data-lucide="github" class="w-5 h-5"></i>
           </a>
@@ -108,6 +108,7 @@
               <a href="#storage-adapters" class="block px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg">Storage Adapters</a>
               <a href="#firebase" class="block px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg">Firebase</a>
               <a href="#supabase" class="block px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg">Supabase</a>
+              <a href="#api" class="block px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg">REST API</a>
             </nav>
           </div>
 
@@ -116,6 +117,7 @@
             <nav class="space-y-1">
               <a href="#customization" class="block px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg">Customization</a>
               <a href="#keyboard-shortcuts" class="block px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg">Keyboard Shortcuts</a>
+              <a href="#integration" class="block px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg">Advanced Integration</a>
               <a href="#api-reference" class="block px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg">API Reference</a>
             </nav>
           </div>
@@ -141,6 +143,64 @@
           <p class="text-lg text-slate-600 leading-relaxed mb-8">
             Complete guide to integrating and using the Comment Widget in your projects. Built for developers who want contextual collaboration capabilities with zero friction.
           </p>
+
+          <!-- Features Overview -->
+          <div class="grid md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                  <i data-lucide="mouse-pointer-click" class="w-4 h-4"></i>
+                </div>
+                <h4 class="font-bold text-slate-900">Click to Comment</h4>
+              </div>
+              <p class="text-sm text-slate-600">Click anywhere on the page to drop a comment pin</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                  <i data-lucide="move" class="w-4 h-4"></i>
+                </div>
+                <h4 class="font-bold text-slate-900">Drag & Drop</h4>
+              </div>
+              <p class="text-sm text-slate-600">Drag comment pins to reposition them on the page</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
+                  <i data-lucide="check-circle" class="w-4 h-4"></i>
+                </div>
+                <h4 class="font-bold text-slate-900">Resolve Comments</h4>
+              </div>
+              <p class="text-sm text-slate-600">Mark comments as resolved when issues are fixed</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
+                  <i data-lucide="message-square" class="w-4 h-4"></i>
+                </div>
+                <h4 class="font-bold text-slate-900">Threaded Replies</h4>
+              </div>
+              <p class="text-sm text-slate-600">Reply to comments for contextual discussions</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                  <i data-lucide="box-select" class="w-4 h-4"></i>
+                </div>
+                <h4 class="font-bold text-slate-900">Element Linking</h4>
+              </div>
+              <p class="text-sm text-slate-600">Comments are linked to DOM elements, highlighted on hover</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-pink-100 text-pink-600 flex items-center justify-center">
+                  <i data-lucide="navigation" class="w-4 h-4"></i>
+                </div>
+                <h4 class="font-bold text-slate-900">Smooth Navigation</h4>
+              </div>
+              <p class="text-sm text-slate-600">Click a comment in sidebar to scroll to its pin</p>
+            </div>
+          </div>
 
           <hr class="border-slate-200 my-12">
 
@@ -207,17 +267,67 @@
                 <tr>
                   <td class="px-6 py-4 font-mono text-purple-600">primaryColor</td>
                   <td class="px-6 py-4 text-slate-600">string</td>
-                  <td class="px-6 py-4 text-slate-600"><span class="inline-flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-primary-600"></span> #7c3aed</span></td>
+                  <td class="px-6 py-4 text-slate-600"><span class="inline-flex items-center gap-2"><span class="w-3 h-3 rounded-full" style="background:#575CE5"></span> #575CE5</span></td>
                   <td class="px-6 py-4 text-slate-600">Main brand color (hex)</td>
                 </tr>
                 <tr>
                   <td class="px-6 py-4 font-mono text-purple-600">position</td>
                   <td class="px-6 py-4 text-slate-600">string</td>
                   <td class="px-6 py-4 text-slate-600">'bottom-right'</td>
-                  <td class="px-6 py-4 text-slate-600">Floating button location</td>
+                  <td class="px-6 py-4 text-slate-600">Floating button location: 'bottom-right', 'bottom-left', 'top-right', 'top-left'</td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 font-mono text-purple-600">container</td>
+                  <td class="px-6 py-4 text-slate-600">HTMLElement</td>
+                  <td class="px-6 py-4 text-slate-600">null</td>
+                  <td class="px-6 py-4 text-slate-600">Scope the widget to a specific container instead of full page</td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 font-mono text-purple-600">enableKeyboardShortcuts</td>
+                  <td class="px-6 py-4 text-slate-600">boolean</td>
+                  <td class="px-6 py-4 text-slate-600">true</td>
+                  <td class="px-6 py-4 text-slate-600">Enable keyboard shortcuts for toggling comment mode</td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 font-mono text-purple-600">keyboardShortcut</td>
+                  <td class="px-6 py-4 text-slate-600">string</td>
+                  <td class="px-6 py-4 text-slate-600">'c'</td>
+                  <td class="px-6 py-4 text-slate-600">Key to toggle comment mode</td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 font-mono text-purple-600">usePortal</td>
+                  <td class="px-6 py-4 text-slate-600">boolean</td>
+                  <td class="px-6 py-4 text-slate-600">true</td>
+                  <td class="px-6 py-4 text-slate-600">Render sidebar via portal to document body (set false for scoped containers)</td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 font-mono text-purple-600">hideButton</td>
+                  <td class="px-6 py-4 text-slate-600">boolean</td>
+                  <td class="px-6 py-4 text-slate-600">false</td>
+                  <td class="px-6 py-4 text-slate-600">Hide the floating toggle button</td>
+                </tr>
+                <tr>
+                  <td class="px-6 py-4 font-mono text-purple-600">hideSidebar</td>
+                  <td class="px-6 py-4 text-slate-600">boolean</td>
+                  <td class="px-6 py-4 text-slate-600">false</td>
+                  <td class="px-6 py-4 text-slate-600">Hide the comments sidebar (threads still accessible via pins)</td>
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <h3 class="text-xl font-bold text-slate-900 mt-12 mb-4">Scoped Container Mode</h3>
+          <p class="text-slate-600 mb-4">
+            Mount the widget inside a specific container instead of the full page. Useful for embedded demos, iframes, or specific sections of your app.
+          </p>
+          <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 p-6 overflow-x-auto">
+            <pre class="text-sm font-mono text-slate-300"><code><span class="text-purple-400">const</span> container = document.<span class="text-blue-400">querySelector</span>(<span class="text-green-400">'.my-preview-area'</span>);
+
+<span class="text-purple-400">const</span> widget = <span class="text-blue-400">initCommentWidget</span>({
+  <span class="text-orange-300">storage</span>: <span class="text-purple-400">new</span> <span class="text-yellow-300">LocalStorageAdapter</span>(<span class="text-green-400">'my-comments'</span>),
+  <span class="text-orange-300">container</span>: container,
+  <span class="text-orange-300">usePortal</span>: <span class="text-purple-400">false</span>  <span class="text-slate-500">// Keep sidebar inside container</span>
+});</code></pre>
           </div>
 
           <hr class="border-slate-200 my-12">
@@ -252,6 +362,39 @@
 
 <span class="text-purple-400">const</span> db = <span class="text-blue-400">getFirestore</span>(app);
 <span class="text-purple-400">const</span> storage = <span class="text-purple-400">new</span> <span class="text-yellow-300">FirebaseAdapter</span>(db, <span class="text-green-400">'comments'</span>);</code></pre>
+              </div>
+            </div>
+
+            <div id="supabase">
+              <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <i data-lucide="database" class="w-5 h-5 text-emerald-500"></i>
+                Supabase
+              </h3>
+              <p class="text-slate-600 mb-4">Use Supabase as your backend with real-time subscriptions.</p>
+              <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 p-6 overflow-x-auto">
+                <pre class="text-sm font-mono text-slate-300"><code><span class="text-purple-400">import</span> { createClient } <span class="text-purple-400">from</span> <span class="text-green-400">'@supabase/supabase-js'</span>;
+<span class="text-purple-400">import</span> { SupabaseAdapter } <span class="text-purple-400">from</span> <span class="text-green-400">'@commentwidget/core'</span>;
+
+<span class="text-purple-400">const</span> supabase = <span class="text-blue-400">createClient</span>(SUPABASE_URL, SUPABASE_ANON_KEY);
+<span class="text-purple-400">const</span> storage = <span class="text-purple-400">new</span> <span class="text-yellow-300">SupabaseAdapter</span>(supabase, <span class="text-green-400">'comments'</span>);</code></pre>
+              </div>
+            </div>
+
+            <div id="api">
+              <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <i data-lucide="globe" class="w-5 h-5 text-blue-500"></i>
+                REST API
+              </h3>
+              <p class="text-slate-600 mb-4">Connect to your own backend API.</p>
+              <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 p-6 overflow-x-auto">
+                <pre class="text-sm font-mono text-slate-300"><code><span class="text-purple-400">import</span> { APIAdapter } <span class="text-purple-400">from</span> <span class="text-green-400">'@commentwidget/core'</span>;
+
+<span class="text-purple-400">const</span> storage = <span class="text-purple-400">new</span> <span class="text-yellow-300">APIAdapter</span>({
+  <span class="text-orange-300">baseUrl</span>: <span class="text-green-400">'https://api.yoursite.com/comments'</span>,
+  <span class="text-orange-300">headers</span>: {
+    <span class="text-green-400">'Authorization'</span>: <span class="text-green-400">'Bearer YOUR_TOKEN'</span>
+  }
+});</code></pre>
               </div>
             </div>
           </div>
@@ -368,7 +511,7 @@ function onSidebarItemClick(commentId) {
 
         <!-- Footer -->
         <div class="mt-24 pt-8 border-t border-slate-200 flex items-center justify-between text-sm text-slate-500">
-          <p>&copy; 2024 Comment Widget</p>
+          <p>&copy; 2025 Comment Widget</p>
           <div class="flex gap-4">
             <a href="#" class="hover:text-slate-900">Privacy</a>
             <a href="#" class="hover:text-slate-900">Terms</a>

@@ -73,27 +73,16 @@ export function initCommentWidget(config: CommentWidgetConfig): CommentWidgetAPI
     
     if (mergedConfig.container) {
       // Scoped to container
+      // Use position: absolute to cover the entire scrollable content area
       widgetContainer.style.position = 'absolute';
       widgetContainer.style.top = '0';
       widgetContainer.style.left = '0';
       widgetContainer.style.width = '100%';
-      // When scoped, we need to match the container's scroll height if it's scrollable,
-      // or just 100% if it's not. 
-      // Actually, if we use 'absolute' inside a 'relative' container, 100% height
-      // will only match the visible height if the container is scrolling.
-      // We should check if we can make it cover the scrollHeight.
-      // But for simplicity and robustness, sticky overlay or fixed overlay logic is tricky inside a div.
-      // A better approach for the overlay is to be sticky itself or use JS to size it.
-      // Let's try 100% first but ensure the parent is handled right.
-      
-      // If we want the overlay to cover the entire SCROLLABLE area:
-      // widgetContainer.style.height = '100%'; 
-      // But if the container has overflow: auto, absolute 100% is relative to the *padding box*.
-      // If content overflows, we might need more.
-      
-      // Let's set min-height to 100% to be safe
+      // Set height to match scrollHeight so pins can be placed anywhere in the scrollable area
+      // Use min-height: 100% as fallback
       widgetContainer.style.minHeight = '100%';
-      
+      // overflow: visible ensures pins slightly outside bounds are still visible
+      widgetContainer.style.overflow = 'visible';
       widgetContainer.style.pointerEvents = 'none';
       widgetContainer.style.zIndex = '999';
       
@@ -105,40 +94,40 @@ export function initCommentWidget(config: CommentWidgetConfig): CommentWidgetAPI
       
       mergedConfig.container.appendChild(widgetContainer);
 
-      // Add ResizeObserver to sync height with scrollHeight
-      // We need to monitor both the container size and its content size (scrollHeight)
-      const resizeObserver = new ResizeObserver(() => {
-        if (widgetContainer && mergedConfig.container) {
-          const scrollHeight = mergedConfig.container.scrollHeight;
-          const clientHeight = mergedConfig.container.clientHeight;
-          // Only update if scrollHeight is actually larger than clientHeight (overflowing)
-          // or if it just changed.
-          widgetContainer.style.height = `${Math.max(scrollHeight, clientHeight)}px`;
-        }
-      });
+      // Sync height with container's scrollHeight to ensure pins are visible in scrollable areas
+      // Use a debounced approach to avoid feedback loops
+      let heightSyncTimeout: ReturnType<typeof setTimeout> | null = null;
+      let lastScrollHeight = 0;
       
-      // Observe the container itself
+      const syncHeight = () => {
+        if (!widgetContainer || !mergedConfig.container) return;
+        
+        // Get the scroll height of actual content (excluding our widget container)
+        // We need to temporarily hide our container to get accurate scrollHeight
+        const prevDisplay = widgetContainer.style.display;
+        widgetContainer.style.display = 'none';
+        const contentScrollHeight = mergedConfig.container.scrollHeight;
+        widgetContainer.style.display = prevDisplay;
+        
+        // Only update if scrollHeight actually changed (avoid feedback loop)
+        if (contentScrollHeight !== lastScrollHeight) {
+          lastScrollHeight = contentScrollHeight;
+          const clientHeight = mergedConfig.container.clientHeight;
+          widgetContainer.style.height = `${Math.max(contentScrollHeight, clientHeight)}px`;
+        }
+      };
+      
+      const debouncedSyncHeight = () => {
+        if (heightSyncTimeout) clearTimeout(heightSyncTimeout);
+        heightSyncTimeout = setTimeout(syncHeight, 50);
+      };
+      
+      // Use ResizeObserver to detect container size changes
+      const resizeObserver = new ResizeObserver(debouncedSyncHeight);
       resizeObserver.observe(mergedConfig.container);
       
-      // Also observe the children of the container to detect content changes
-      // This is a bit expensive but necessary if content grows without container resizing
-      // A MutationObserver might be better for content changes, but ResizeObserver on children is robust for layout changes
-      // Actually, we can just observe the container and rely on it firing when scrollHeight changes?
-      // ResizeObserver fires when content box changes. It does NOT fire when scrollHeight changes due to children.
-      // So we need to observe the children or use a MutationObserver.
-      // Let's use a simple interval check or MutationObserver for robustness in this demo.
-      // Or just observe the first child wrapper if it exists.
-      
-      // Better: Observe the body or a specific content wrapper if possible.
-      // For now, let's attach a MutationObserver to detect DOM changes that might affect height.
-      const mutationObserver = new MutationObserver(() => {
-         if (widgetContainer && mergedConfig.container) {
-            const scrollHeight = mergedConfig.container.scrollHeight;
-            const clientHeight = mergedConfig.container.clientHeight;
-            widgetContainer.style.height = `${Math.max(scrollHeight, clientHeight)}px`;
-         }
-      });
-      
+      // Use MutationObserver to detect content changes that affect height
+      const mutationObserver = new MutationObserver(debouncedSyncHeight);
       mutationObserver.observe(mergedConfig.container, { 
         childList: true, 
         subtree: true, 
@@ -147,12 +136,11 @@ export function initCommentWidget(config: CommentWidgetConfig): CommentWidgetAPI
       });
 
       // Initial sync
-      const scrollHeight = mergedConfig.container.scrollHeight;
-      const clientHeight = mergedConfig.container.clientHeight;
-      widgetContainer.style.height = `${Math.max(scrollHeight, clientHeight)}px`;
+      syncHeight();
 
       // Store observers to disconnect later
       (widgetContainer as any).__observers = [resizeObserver, mutationObserver];
+      (widgetContainer as any).__heightSyncTimeout = heightSyncTimeout;
 
     } else {
       // Full page absolute - covers entire document
@@ -220,6 +208,11 @@ export function initCommentWidget(config: CommentWidgetConfig): CommentWidgetAPI
           (widgetContainer as any).__observers.forEach((obs: any) => {
             if (obs.disconnect) obs.disconnect();
           });
+        }
+        
+        // Clear height sync timeout if exists
+        if ((widgetContainer as any).__heightSyncTimeout) {
+          clearTimeout((widgetContainer as any).__heightSyncTimeout);
         }
 
         if (widgetContainer.parentElement) {

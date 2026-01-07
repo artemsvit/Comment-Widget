@@ -8,6 +8,7 @@ interface CommentBubbleProps {
   isActive: boolean;
   onClick: () => void;
   onDrag?: (newX: number, newY: number) => void;
+  onDragStart?: () => void;
   onDragEnd?: (finalX: number, finalY: number) => void;
   isThreadOpen?: boolean;
   primaryColor: string;
@@ -19,6 +20,7 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
   isActive, 
   onClick, 
   onDrag, 
+  onDragStart,
   onDragEnd, 
   isThreadOpen,
   primaryColor,
@@ -77,6 +79,10 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
       if (!hasDragged && distance > dragThreshold) {
         hasDragged = true;
         setIsDragging(true);
+        // Notify parent that dragging has started
+        if (onDragStart) {
+          onDragStart();
+        }
       }
       
       if (hasDragged && onDrag) {
@@ -205,6 +211,10 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
       if (!hasDragged && distance > dragThreshold) {
         hasDragged = true;
         setIsDragging(true);
+        // Notify parent that dragging has started
+        if (onDragStart) {
+          onDragStart();
+        }
       }
       
       if (hasDragged && onDrag) {
@@ -289,8 +299,29 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
   // Highlight linked element on hover
   const [highlightedElement, setHighlightedElement] = React.useState<HTMLElement | null>(null);
   
+  // Global cleanup function to clear all hover highlights
+  const clearAllHoverHighlights = React.useCallback(() => {
+    document.querySelectorAll('[data-comment-widget-highlight]').forEach((el) => {
+      const htmlEl = el as HTMLElement;
+      const prevOutline = (htmlEl as any).__commentWidgetOriginalOutline || '';
+      const prevOutlineOffset = (htmlEl as any).__commentWidgetOriginalOutlineOffset || '';
+      htmlEl.style.outline = prevOutline;
+      htmlEl.style.outlineOffset = prevOutlineOffset;
+      if (!prevOutline) {
+        htmlEl.style.transition = '';
+      }
+      htmlEl.removeAttribute('data-comment-widget-highlight');
+      delete (htmlEl as any).__commentWidgetOriginalOutline;
+      delete (htmlEl as any).__commentWidgetOriginalOutlineOffset;
+    });
+  }, []);
+  
   const handleMouseEnter = React.useCallback(() => {
-    if (comment.selector && !isDragging) {
+    // Only show hover highlight when NOT dragging and pin is NOT active (to avoid conflicts)
+    if (comment.selector && !isDragging && !isActive) {
+      // Clear any existing hover highlights first (only one should be highlighted at a time)
+      clearAllHoverHighlights();
+      
       try {
         // Try to find the element using the selector
         // First try exact match
@@ -318,6 +349,9 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
           element.style.outlineOffset = '2px';
           element.style.transition = 'outline 0.2s ease-out';
           
+          // Mark element for easier cleanup
+          element.setAttribute('data-comment-widget-highlight', 'true');
+          
           // Store original styles to restore later
           (element as any).__commentWidgetOriginalOutline = prevOutline;
           (element as any).__commentWidgetOriginalOutlineOffset = prevOutlineOffset;
@@ -326,7 +360,42 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
         // Selector might be invalid, ignore silently
       }
     }
-  }, [comment.selector, isDragging, primaryColor]);
+  }, [comment.selector, isDragging, isActive, primaryColor, clearAllHoverHighlights]);
+  
+  // Clear hover highlight when dragging starts or pin becomes active
+  React.useEffect(() => {
+    if ((isDragging || isActive) && highlightedElement) {
+      const prevOutline = (highlightedElement as any).__commentWidgetOriginalOutline || '';
+      const prevOutlineOffset = (highlightedElement as any).__commentWidgetOriginalOutlineOffset || '';
+      highlightedElement.style.outline = prevOutline;
+      highlightedElement.style.outlineOffset = prevOutlineOffset;
+      if (!prevOutline) {
+        highlightedElement.style.transition = '';
+      }
+      highlightedElement.removeAttribute('data-comment-widget-highlight');
+      delete (highlightedElement as any).__commentWidgetOriginalOutline;
+      delete (highlightedElement as any).__commentWidgetOriginalOutlineOffset;
+      setHighlightedElement(null);
+    }
+  }, [isDragging, isActive, highlightedElement]);
+  
+  // Cleanup on unmount - clear this pin's highlight
+  React.useEffect(() => {
+    return () => {
+      if (highlightedElement) {
+        const prevOutline = (highlightedElement as any).__commentWidgetOriginalOutline || '';
+        const prevOutlineOffset = (highlightedElement as any).__commentWidgetOriginalOutlineOffset || '';
+        highlightedElement.style.outline = prevOutline;
+        highlightedElement.style.outlineOffset = prevOutlineOffset;
+        if (!prevOutline) {
+          highlightedElement.style.transition = '';
+        }
+        highlightedElement.removeAttribute('data-comment-widget-highlight');
+        delete (highlightedElement as any).__commentWidgetOriginalOutline;
+        delete (highlightedElement as any).__commentWidgetOriginalOutlineOffset;
+      }
+    };
+  }, [highlightedElement]);
   
   const handleMouseLeave = React.useCallback(() => {
     if (highlightedElement) {
@@ -337,6 +406,7 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
       if (!prevOutline) {
         highlightedElement.style.transition = '';
       }
+      highlightedElement.removeAttribute('data-comment-widget-highlight');
       delete (highlightedElement as any).__commentWidgetOriginalOutline;
       delete (highlightedElement as any).__commentWidgetOriginalOutlineOffset;
       setHighlightedElement(null);
@@ -404,24 +474,25 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
           ${isDragging ? 'shadow-2xl' : ''}
           ${isThreadOpen && !isActive 
             ? 'bg-gray-400 shadow-gray-400/20'
-            : isActive 
-              ? 'shadow-(--primary-color)/50' 
-              : comment.resolved
-                ? `bg-green-500 ${isDragging ? 'shadow-green-500/50' : 'shadow-green-500/30'}`
+            : comment.resolved
+              ? `bg-green-500 ${isDragging ? 'shadow-green-500/50' : 'shadow-green-500/30'}`
+              : isActive 
+                ? 'shadow-(--primary-color)/50' 
                 : ''
           }
         `}
         style={{
-          backgroundColor: isActive 
-            ? primaryColor 
+          // Resolved comments always show green, even when active
+          backgroundColor: comment.resolved
+            ? '#22c55e' // green-500
             : isThreadOpen && !isActive
               ? undefined // Use gray-400 from className
-              : comment.resolved
-                ? undefined // Use green-500 from className
-                : primaryColor, // Use primary color for unresolved comments
-          boxShadow: !isThreadOpen && !isActive && !comment.resolved && !isActive
-            ? `0 4px 6px -1px ${primaryColor}30, 0 2px 4px -1px ${primaryColor}20`
-            : undefined,
+              : primaryColor, // Use primary color for unresolved comments (active or not)
+          boxShadow: comment.resolved
+            ? isDragging ? '0 4px 6px -1px rgba(34, 197, 94, 0.5)' : '0 4px 6px -1px rgba(34, 197, 94, 0.3)'
+            : !isThreadOpen && !isActive
+              ? `0 4px 6px -1px ${primaryColor}30, 0 2px 4px -1px ${primaryColor}20`
+              : undefined,
           transition: 'background-color 0.2s ease-out, box-shadow 0.2s ease-out, filter 0.2s ease-out',
         }}
         onMouseEnter={(e) => {
@@ -495,59 +566,6 @@ export const CommentBubble: React.FC<CommentBubbleProps> = ({
         </div>
       )}
 
-      {!isDragging && (
-        <div 
-          className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
-          style={{
-            zIndex: 1000,
-            bottom: '100%',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            marginBottom: '0.5rem',
-            pointerEvents: 'none',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          <div 
-            className="bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg max-w-48 truncate"
-            style={{
-              backgroundColor: '#111827',
-              color: 'white',
-              fontSize: '0.75rem',
-              padding: '0.25rem 0.5rem',
-              borderRadius: '0.25rem',
-              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-              maxWidth: '12rem',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-            }}
-          >
-            {comment.selector ? (
-              <span style={{ color: '#9ca3af', marginRight: '0.25rem', fontSize: '0.65rem' }}>
-                {comment.selector.startsWith('#') ? '#' : ''}
-                {comment.selector.replace(/^[#.]/, '')}
-              </span>
-            ) : null}
-            {comment.text}
-          </div>
-          <div 
-            className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-900"
-            style={{
-              position: 'absolute',
-              top: '100%',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: 0,
-              height: 0,
-              borderLeft: '4px solid transparent',
-              borderRight: '4px solid transparent',
-              borderTop: '4px solid #111827'
-            }}
-          ></div>
-        </div>
-      )}
     </motion.div>
   );
 };

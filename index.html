@@ -121,7 +121,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
       <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 shadow-sm mb-8 animate-fade-in-up">
         <span class="flex h-2 w-2 rounded-full bg-green-500"></span>
-        <span class="text-sm font-medium text-slate-600">v1.0.0 Now Available</span>
+        <span class="text-sm font-medium text-slate-600">v1.0.2 Now Available</span>
       </div>
       
       <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight mb-6 animate-fade-in-up" style="animation-delay: 0.1s">
@@ -259,7 +259,7 @@
               <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400">
                 <i data-lucide="check" class="w-4 h-4"></i>
               </div>
-              <span class="text-slate-300">Zero dependencies</span>
+              <span class="text-slate-300">No backend required</span>
             </div>
             <div class="flex items-center gap-4">
               <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400">
@@ -281,7 +281,7 @@
           </div>
           <div class="p-6 overflow-x-auto">
             <pre class="font-mono text-sm leading-relaxed text-slate-300"><code><span class="text-purple-400">import</span> { useEffect } <span class="text-purple-400">from</span> <span class="text-green-400">'react'</span>;
-<span class="text-purple-400">import</span> { initCommentWidget } <span class="text-purple-400">from</span> <span class="text-green-400">'@commentwidget/core'</span>;
+<span class="text-purple-400">import</span> { initCommentWidget, LocalStorageAdapter } <span class="text-purple-400">from</span> <span class="text-green-400">'@commentwidget/core'</span>;
 
 <span class="text-purple-400">function</span> <span class="text-blue-400">App</span>() {
   <span class="text-blue-400">useEffect</span>(() => {
